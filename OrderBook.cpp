@@ -17,7 +17,15 @@ void OrderBook::addOrder(Order& order){
     
 
     if (order.type == OrderType::LIMIT){
-        matchLimitOrder(order, order.side);
+        if (order.side == Side::BUY){
+            matchLimitOrder(order, asks);
+        }
+
+        else if (order.side == Side::SELL){
+            matchLimitOrder(order, bids);
+        }
+        
+        
         if (order.quantity > 0) {
             if (order.side == Side::BUY) {
                 auto& orders = bids[order.price];
@@ -42,8 +50,13 @@ void OrderBook::addOrder(Order& order){
             }
                 }
     }
-    else if (order.type == OrderType::MARKET){
-        matchMarketOrder(order, order.side);
+    else if (order.type == OrderType::MARKET) {
+        if (order.side == Side::BUY) {
+            matchMarketOrder(order, asks);
+        } 
+        else {
+            matchMarketOrder(order, bids);
+        }
     }
 
 };
@@ -83,17 +96,20 @@ void OrderBook::matchLimitOrder(Order& order, Book& book){
         
         auto& orders = book.begin() -> second;
         Order& firstOrder = orders.front();
-        if (firstOrder.quantity <= order.quantity){
-            order.quantity -= firstOrder.quantity;
-            TradeInfo trade {
+        Quantity amount_traded = std::min(firstOrder.quantity, order.quantity);
+        TradeInfo trade {
                 OrderType::LIMIT,
                 order.side == Side::BUY ? order.id : firstOrder.id,
                 order.side == Side::BUY ? firstOrder.id : order.id,
                 firstOrder.price,
-                firstOrder.quantity,
+                amount_traded,
                 std::chrono::system_clock::now()
             };
-            tradeHistory.push_back(trade);
+        tradeHistory.push_back(trade);
+        order.quantity -= amount_traded;
+        firstOrder.quantity -= amount_traded;
+
+        if (firstOrder.quantity === 0){
             orderLookup.erase(firstOrder.id);
             orders.erase(orders.begin());
             if (orders.empty()){
@@ -101,21 +117,7 @@ void OrderBook::matchLimitOrder(Order& order, Book& book){
             }
 
         }
-        else if (firstOrder.quantity > order.quantity){
-            firstOrder.quantity -= order.quantity;
-            TradeInfo trade {
-                OrderType::LIMIT,
-                order.side == Side::BUY ? order.id : firstOrder.id,
-                order.side == Side::BUY ? firstOrder.id : order.id,
-                firstOrder.price,
-                order.quantity,
-                std::chrono::system_clock::now()
-            };
-            order.quantity = 0;
-            tradeHistory.push_back(trade);
-            return;
-        }    
-            }
+    }
 };
 
 template <typename Book>
@@ -123,7 +125,7 @@ void OrderBook::matchMarketOrder(Order& order, Book& book){
     while (!book.empty() && order.quantity > 0){
         auto& orders = book.begin() -> second;
         Order& bestAvailable = orders.front();
-        auto amount_traded = std::min(order.quantity, bestAvailable.quantity);
+        Quantity amount_traded = std::min(order.quantity, bestAvailable.quantity);
         TradeInfo trade {
                     OrderType::MARKET, 
                     order.side == Side::BUY ? order.id : bestAvailable.id,
