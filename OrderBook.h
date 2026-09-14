@@ -17,7 +17,7 @@ class OrderBook{
         std::vector<TradeInfo> tradeHistory;
 
         template <typename Book>
-        void OrderBook::matchLimitOrder(Order& order, Book& book){
+        void matchLimitOrder(Order& order, Book& book){
             while (!book.empty() 
                     && order.quantity > 0 
                     && (order.side == Side::BUY ? order.price >= book.begin() -> first : order.price <= book.begin() -> first)){
@@ -37,7 +37,7 @@ class OrderBook{
                 order.quantity -= amount_traded;
                 firstOrder.quantity -= amount_traded;
 
-                if (firstOrder.quantity === 0){
+                if (firstOrder.quantity == 0){
                     orderLookup.erase(firstOrder.id);
                     orders.erase(orders.begin());
                     if (orders.empty()){
@@ -49,7 +49,7 @@ class OrderBook{
         };
 
         template <typename Book>
-        void OrderBook::matchMarketOrder(Order& order, Book& book){
+        void matchMarketOrder(Order& order, Book& book){
             while (!book.empty() && order.quantity > 0){
                 auto& orders = book.begin() -> second;
                 Order& bestAvailable = orders.front();
@@ -79,7 +79,7 @@ class OrderBook{
             }
         };
 
-        
+
     public:
         void addOrder(Order& order);
         bool cancelOrder(OrderID orderID);

@@ -25,8 +25,6 @@ struct Order{
     Side side;
     Price price;
     Quantity quantity; 
-
-    Order(OrderID id, OrderType type, Side side, Price price, Quantity quantity);
 };
 
 struct OrderLocation{
