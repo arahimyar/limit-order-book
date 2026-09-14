@@ -1,3 +1,9 @@
+Add Try catch to API
+
+
+==============
+
+
 QUANT RESEARCH PROJECT
 
 Working title:

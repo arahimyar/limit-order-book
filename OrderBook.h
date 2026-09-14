@@ -1,4 +1,5 @@
 #pragma once
+
 #include "Order.h"
 #include <cstdint>
 #include <map>
@@ -10,15 +11,20 @@
 
 class OrderBook{
     private:
-    std::map<Price, std::list<Order>, std::greater<Price>> bids;
-    std::map<Price, std::list<Order>> asks;
-    std::unordered_map<OrderID, OrderLocation> orderLookup;
-    void matchLimitOrder(Order& order);
-    void matchMarketOrder(Order& order);
-    std::vector<TradeInfo> tradeHistory;
+        std::map<Price, std::list<Order>, std::greater<Price>> bids;
+        std::map<Price, std::list<Order>> asks;
+        std::unordered_map<OrderID, OrderLocation> orderLookup;
+
+        template <typename Book>
+        void OrderBook::matchLimitOrder(Order& order, Book& book);
+
+        template <typename Book>
+        void matchMarketOrder(Order& order, Book& book);
+        std::vector<TradeInfo> tradeHistory;
+
     public:
         void addOrder(Order& order);
-        void cancelOrder(OrderID orderID);
+        bool cancelOrder(OrderID orderID);
 };
 
 
