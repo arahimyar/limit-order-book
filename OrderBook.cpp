@@ -5,14 +5,23 @@
 #include <functional>
 #include <chrono>
 #include <stdexcept>
+#include <optional>
 
 void OrderBook::addOrder(Order& order){
     if(orderLookup.contains(order.id)){
         throw std::invalid_argument("Order ID already exists.");
     }
 
-    if (order.quantity == 0){
-        throw std::invalid_argument(("Order quantity must be strictly positive."));
+    if (order.quantityOriginal == 0){
+        throw std::invalid_argument("Order quantity must be strictly positive.");
+    }
+
+    if (order.type == OrderType::LIMIT && !order.price) {
+        throw std::invalid_argument("Limit order must have a price.");
+    }
+
+    if (order.type == OrderType::MARKET && order.price) {
+        throw std::invalid_argument("Market order cannot have a price.");
     }
     
 
@@ -26,24 +35,24 @@ void OrderBook::addOrder(Order& order){
         }
         
         
-        if (order.quantity > 0) {
+        if (order.quantityRemaining > 0) {
             if (order.side == Side::BUY) {
-                auto& orders = bids[order.price];
+                auto& orders = bids[order.price.value()];
                 auto iter = orders.insert(orders.end(), order);
                 OrderLocation location{
                     Side::BUY,
-                    order.price,
+                    order.price.value(),
                     iter
                 };
                 orderLookup[order.id] = location;
 
             }
             else if (order.side == Side::SELL) {
-                auto& orders = asks[order.price];
+                auto& orders = asks[order.price.value()];
                 auto iter = orders.insert(orders.end(), order);
                 OrderLocation location{
                     Side::SELL,
-                    order.price,
+                    order.price.value(),
                     iter
                 };
                 orderLookup[order.id] = location;
@@ -88,7 +97,6 @@ bool OrderBook::cancelOrder(OrderID orderID){
     return true;
 };
 
-
 Price OrderBook::getSpread() const{
     if (bids.empty()){
         throw std::runtime_error("Cannot compute spread: bids is empty.");
@@ -117,4 +125,39 @@ Price OrderBook::getBestAsk() const{
     return best_ask;
 }
 
+std::optional<Order> OrderBook::getOrderInfo(OrderID orderID) const{
+    auto location = orderLookup.find(orderID);
+    if (location == orderLookup.end()){
+        return std::nullopt;
+    }
 
+    return *(location -> second.iterator);
+
+};
+
+std::map<Price, PriceLevel, std::greater<Price>> OrderBook::getCurrentBids() const{
+    std::map<Price, PriceLevel, std::greater<Price>> bids_map;
+    for (const auto& [price, orders] : bids){
+        PriceLevel& level = bids_map[price];
+        for (const auto& order : orders){
+            level.totalQuantity += order.quantityRemaining;
+            level.orderCount++;
+        }
+    }
+    return bids_map;
+};
+
+std::map<Price, PriceLevel> OrderBook::getCurrentAsks() const{
+    std::map<Price, PriceLevel> asks_map;
+    for (const auto& [price, orders] : asks){
+        PriceLevel& level = asks_map[price];
+        for (const auto& order : orders){
+            level.totalQuantity += order.quantityRemaining;
+            level.orderCount++;
+        }
+    }
+    return asks_map;
+};
+const std::vector<TradeInfo>& OrderBook::getTradeHistory()  const{
+    return tradeHistory;
+};

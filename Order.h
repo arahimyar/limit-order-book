@@ -3,11 +3,13 @@
 #include <cstdint>
 #include <chrono>
 #include <list>
+#include <optional>
 
 using Price = std::int64_t;
 using OrderID = std::uint64_t;
 using Quantity = std::uint32_t;
 using Time = std::chrono::system_clock::time_point;
+using OrderCount = std::uint32_t;
 
 enum class OrderType{
     LIMIT,
@@ -23,8 +25,9 @@ struct Order{
     OrderID id;
     OrderType type;
     Side side;
-    Price price;
-    Quantity quantity; 
+    std::optional<Price> price;
+    Quantity quantityOriginal; 
+    Quantity quantityRemaining;
 };
 
 struct OrderLocation{
@@ -40,4 +43,9 @@ struct TradeInfo {
     Price price;
     Quantity  quantity;
     Time time;
+};
+
+struct PriceLevel{
+    Quantity totalQuantity = 0;
+    OrderCount orderCount = 0;
 };

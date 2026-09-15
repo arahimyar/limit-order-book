@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Order.h"
 #include <cstdint>
 #include <map>
@@ -7,6 +6,7 @@
 #include <list>
 #include <vector>
 #include <functional>
+#include <optional>
 
 
 class OrderBook{
@@ -16,28 +16,30 @@ class OrderBook{
         std::unordered_map<OrderID, OrderLocation> orderLookup;
         std::vector<TradeInfo> tradeHistory;
 
+        void addOrder(Order& order);
+
         template <typename Book>
         void matchLimitOrder(Order& order, Book& book){
             while (!book.empty() 
-                    && order.quantity > 0 
-                    && (order.side == Side::BUY ? order.price >= book.begin() -> first : order.price <= book.begin() -> first)){
+                    && order.quantityRemaining > 0 
+                    && (order.side == Side::BUY ? order.price.value() >= book.begin() -> first : order.price.value() <= book.begin() -> first)){
                 
                 auto& orders = book.begin() -> second;
                 Order& firstOrder = orders.front();
-                Quantity amount_traded = std::min(firstOrder.quantity, order.quantity);
+                Quantity amount_traded = std::min(firstOrder.quantityRemaining, order.quantityRemaining);
                 TradeInfo trade {
                         OrderType::LIMIT,
                         order.side == Side::BUY ? order.id : firstOrder.id,
                         order.side == Side::BUY ? firstOrder.id : order.id,
-                        firstOrder.price,
+                        firstOrder.price.value(),
                         amount_traded,
                         std::chrono::system_clock::now()
                     };
                 tradeHistory.push_back(trade);
-                order.quantity -= amount_traded;
-                firstOrder.quantity -= amount_traded;
+                order.quantityRemaining -= amount_traded;
+                firstOrder.quantityRemaining -= amount_traded;
 
-                if (firstOrder.quantity == 0){
+                if (firstOrder.quantityRemaining == 0){
                     orderLookup.erase(firstOrder.id);
                     orders.erase(orders.begin());
                     if (orders.empty()){
@@ -50,22 +52,22 @@ class OrderBook{
 
         template <typename Book>
         void matchMarketOrder(Order& order, Book& book){
-            while (!book.empty() && order.quantity > 0){
+            while (!book.empty() && order.quantityRemaining > 0){
                 auto& orders = book.begin() -> second;
                 Order& bestAvailable = orders.front();
-                Quantity amount_traded = std::min(order.quantity, bestAvailable.quantity);
+                Quantity amount_traded = std::min(order.quantityRemaining, bestAvailable.quantityRemaining);
                 TradeInfo trade {
                             OrderType::MARKET, 
                             order.side == Side::BUY ? order.id : bestAvailable.id,
                             order.side == Side::BUY ? bestAvailable.id : order.id,
-                            bestAvailable.price,
+                            bestAvailable.price.value(),
                             amount_traded,
                             std::chrono::system_clock::now()
                         };
                 tradeHistory.push_back(trade);
                 
-                if (bestAvailable.quantity <= order.quantity){
-                        order.quantity -= bestAvailable.quantity;
+                if (bestAvailable.quantityRemaining <= order.quantityRemaining){
+                        order.quantityRemaining -= bestAvailable.quantityRemaining;
                         orders.erase(orders.begin());
                         orderLookup.erase(bestAvailable.id);
                         if (orders.empty()){
@@ -73,31 +75,45 @@ class OrderBook{
                         }
                 }
                 else{
-                    bestAvailable.quantity -= order.quantity;
-                    order.quantity = 0;
+                    bestAvailable.quantityRemaining -= order.quantityRemaining;
+                    order.quantityRemaining = 0;
                 }
             }
         };
 
 
     public:
-        void addOrder(Order& order);
 
-        void buy(OrderID id, Price price, Quantity quantity, OrderType type = OrderType::LIMIT) {
-            Order order = Order{id, type, Side::BUY, price, quantity};
+        void buyLimit(OrderID id, Price price, Quantity quantity) {
+            Order order = Order{id, OrderType::LIMIT, Side::BUY, price, quantity, quantity};
             addOrder(order);
         }
 
-        void sell(OrderID id, Price price, Quantity quantity, OrderType type = OrderType::MARKET) {
-            Order order = Order{id, type, Side::SELL, price, quantity};
+        void sellLimit(OrderID id, Price price, Quantity quantity) {
+            Order order = Order{id, OrderType::LIMIT, Side::SELL, price, quantity, quantity};
             addOrder(order);
         }
+
+        void buyMarket(OrderID id, Quantity quantity){
+            Order order = Order{id, OrderType::MARKET, Side::BUY, std::nullopt, quantity, quantity};
+            addOrder(order);
+        };
+        void sellMarket(OrderID id, Quantity quantity){
+            Order order = Order{id, OrderType::MARKET, Side::SELL, std::nullopt, quantity, quantity};
+            addOrder(order);
+        };
 
         bool cancelOrder(OrderID orderID);
-        Price getSpread() const;;
+
+        Price getSpread() const;
         Price getBestBid() const;
         Price getBestAsk() const;
 
+        // Need to implement these:
+        std::optional<Order> getOrderInfo(OrderID) const;
+        std::map<Price, PriceLevel, std::greater<Price>> getCurrentBids() const;
+        std::map<Price, PriceLevel> getCurrentAsks() const;
+        const std::vector<TradeInfo>& getTradeHistory()  const;
 };
 
 
