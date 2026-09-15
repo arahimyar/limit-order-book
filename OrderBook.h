@@ -82,7 +82,22 @@ class OrderBook{
 
     public:
         void addOrder(Order& order);
+
+        void buy(OrderID id, Price price, Quantity quantity, OrderType type = OrderType::LIMIT) {
+            Order order = Order{id, type, Side::BUY, price, quantity};
+            addOrder(order);
+        }
+
+        void sell(OrderID id, Price price, Quantity quantity, OrderType type = OrderType::MARKET) {
+            Order order = Order{id, type, Side::SELL, price, quantity};
+            addOrder(order);
+        }
+
         bool cancelOrder(OrderID orderID);
+        Price getSpread() const;;
+        Price getBestBid() const;
+        Price getBestAsk() const;
+
 };
 
 
