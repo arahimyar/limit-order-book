@@ -109,7 +109,6 @@ class OrderBook{
         Price getBestBid() const;
         Price getBestAsk() const;
 
-        // Need to implement these:
         std::optional<Order> getOrderInfo(OrderID) const;
         std::map<Price, PriceLevel, std::greater<Price>> getCurrentBids() const;
         std::map<Price, PriceLevel> getCurrentAsks() const;
