@@ -1,4 +1,7 @@
-Add Try catch to API
+- Add Try catch to API
+- Google testing
+- Benchmarking
+- Cmake
 
 
 ==============

@@ -89,7 +89,16 @@ bool OrderBook::cancelOrder(OrderID orderID){
 };
 
 
-
-
+Price OrderBook::getSpread(){
+    if (bids.empty()){
+        throw std::runtime_error("Cannot compute spread: bids is empty.");
+    }
+    else if (asks.empty()){
+        throw std::runtime_error("Cannot compute spread: asks is empty.");
+    }
+    Price best_bid = bids.begin() -> first;
+    Price best_ask = asks.begin() -> first;
+    return best_ask - best_bid;
+};
 
 
