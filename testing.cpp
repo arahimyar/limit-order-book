@@ -250,6 +250,8 @@ TEST(OrderBookTest, MarketSell_Multiple){
     EXPECT_EQ(trade3.quantity, 10);
 };
 
+TEST(OrderBookTest, MarketBuyExcess){};
+TEST(OrderBookTest, MarketSellExcess){};
 
 // Cancelling orders
 
@@ -307,7 +309,12 @@ TEST(OrderBookTest, CancelNonexistent){
 };
 
 
+// Matching & order book state
 
-// Order book state
+Test(OrderBookTest, NoMatch){};
 
-// Trading history & matching
+Test(OrderBookTest, ExactMatch){};
+
+Test(OrderBookTest, PartialMatch){};
+
+Test(OrderBookTest, FIFO){};
