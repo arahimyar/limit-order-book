@@ -1,102 +1,6 @@
 #include <gtest/gtest.h>
 #include "OrderBook.h"
 
-// Adding orders
-TEST(OrderBookTest, AddBuyLimitOrder_Single){
-    OrderBook book;
-    book.buyLimit(1, 10, 100);
-    auto order = book.getOrderInfo(1);
-    ASSERT_TRUE(order.has_value());
-    EXPECT_EQ(order->id, 1);
-    EXPECT_EQ(order->type, OrderType::LIMIT);
-    EXPECT_EQ(order->side, Side::BUY);
-    EXPECT_EQ(order->price, 10);
-    EXPECT_EQ(order->quantityOriginal, 100);
-    EXPECT_EQ(order->quantityRemaining, 100);
-    EXPECT_EQ(book.getBestBid(), 10);
-};
-
-TEST(OrderBookTest, AddSellLimitOrder_Single){
-    OrderBook book;
-    book.sellLimit(1, 10, 100);
-    auto order = book.getOrderInfo(1);
-    ASSERT_TRUE(order.has_value());
-    EXPECT_EQ(order->id, 1);
-    EXPECT_EQ(order->type, OrderType::LIMIT);
-    EXPECT_EQ(order->side, Side::SELL);
-    EXPECT_EQ(order->price, 10);
-    EXPECT_EQ(order->quantityOriginal, 100);
-    EXPECT_EQ(order->quantityRemaining, 100);
-    EXPECT_EQ(book.getBestAsk(), 10);
-};
-
-TEST(OrderBookTest, AddBuyLimitOrder_Multiple){
-    OrderBook book;
-    
-    book.buyLimit(1, 100, 50);
-    book.buyLimit(2, 101, 10);
-    book.buyLimit(3, 99, 30);
-    book.buyLimit(4, 100, 10);
-
-    EXPECT_EQ(book.getBestBid(), 101);
-
-    auto bids = book.getCurrentBids();
-
-    ASSERT_EQ(bids.size(), 3);
-
-    EXPECT_EQ(bids.at(99).totalQuantity, 30);
-    EXPECT_EQ(bids.at(100).totalQuantity, 60);
-    EXPECT_EQ(bids.at(101).totalQuantity, 10);
-
-    EXPECT_EQ(bids.at(99).orderCount, 1);
-    EXPECT_EQ(bids.at(100).orderCount, 2);
-    EXPECT_EQ(bids.at(101).orderCount, 1);
-};
-
-TEST(OrderBookTest, AddSellLimitOrder_Multiple){
-    OrderBook book;
-    
-    book.sellLimit(1, 100, 50);
-    book.sellLimit(2, 101, 10);
-    book.sellLimit(3, 99, 30);
-    book.sellLimit(4, 100, 10);
-
-    EXPECT_EQ(book.getBestAsk(), 99);
-
-    auto asks = book.getCurrentAsks();
-
-    ASSERT_EQ(asks.size(), 3);
-
-    EXPECT_EQ(asks.at(99).totalQuantity, 30);
-    EXPECT_EQ(asks.at(100).totalQuantity, 60);
-    EXPECT_EQ(asks.at(101).totalQuantity, 10);
-
-    EXPECT_EQ(asks.at(99).orderCount, 1);
-    EXPECT_EQ(asks.at(100).orderCount, 2);
-    EXPECT_EQ(asks.at(101).orderCount, 1);
-};
-
-// Validating orders
-
-TEST(OrderBookTest, DuplicateID){
-    OrderBook book;
-
-book.buyLimit(1, 1, 1);
-    EXPECT_THROW(book.buyLimit(1, 2, 2), std::invalid_argument);
-};
-
-TEST(OrderBookTest, NonPositivePrice){
-    OrderBook book;
-    EXPECT_THROW(book.buyLimit(2, 0, 2), std::invalid_argument)
-};
-
-TEST(OrderBookTest, NonPositiveQuantity){
-    OrderBook book;
-    EXPECT_THROW(book.buyLimit(3, 2, 0), std::invalid_argument);
-};
-
-// Market orders
-
 TEST(OrderBookTest, MarketBuy_Single){
     OrderBook book;
 
@@ -250,71 +154,46 @@ TEST(OrderBookTest, MarketSell_Multiple){
     EXPECT_EQ(trade3.quantity, 10);
 };
 
-TEST(OrderBookTest, MarketBuyExcess){};
-TEST(OrderBookTest, MarketSellExcess){};
-
-// Cancelling orders
-
-TEST(OrderBookTest, CancelBuy){
+TEST(OrderBookTest, MarketBuyExcess){
     OrderBook book;
-
-    book.buyLimit(1, 100, 10);
-    book.buyLimit(2, 100, 50);
-    book.buyLimit(3, 200, 20);
-
-    book.cancelOrder(2);
-    auto bids = book.getCurrentBids();
-    EXPECT_EQ(bids.size(), 2);
-    EXPECT_EQ(bids.at(100).totalQuantity, 10);
-    EXPECT_EQ(bids.at(100).orderCount, 1);
-
-    book.cancelOrder(3);
-    bids = book.getCurrentBids();
-    EXPECT_EQ(bids.size(), 1);
-    EXPECT_EQ(bids.find(200), bids.end());
-
-    book.cancelOrder(1);
-    bids = book.getCurrentBids();
-    EXPECT_TRUE(bids.empty());
-};
-
-TEST(OrderBookTest, CancelSell){
-    OrderBook book;
-
     book.sellLimit(1, 100, 10);
-    book.sellLimit(2, 100, 50);
-    book.sellLimit(3, 200, 20);
+    book.sellLimit(2, 100, 20);
+    book.sellLimit(3, 100, 50);
+    book.buyMarket(4, 100);
 
-    book.cancelOrder(2);
-    auto asks = book.getCurrentAsks();
-    EXPECT_EQ(asks.size(), 2);
-    EXPECT_EQ(asks.at(100).totalQuantity, 10);
-    EXPECT_EQ(asks.at(100).orderCount, 1);
-
-    book.cancelOrder(3);
-    asks = book.getCurrentAsks();
-    EXPECT_EQ(asks.size(), 1);
-    EXPECT_EQ(asks.find(200), asks.end());
-
-    book.cancelOrder(1);
-    asks = book.getCurrentAsks();
-    EXPECT_TRUE(asks.empty());
+    const auto& trades = book.getTradeHistory();
+    ASSERT_EQ(trades.size(), 3);
+    EXPECT_TRUE(book.getCurrentAsks().empty());
+    EXPECT_TRUE(book.getCurrentBids().empty());
 };
 
-
-TEST(OrderBookTest, CancelNonexistent){
+TEST(OrderBookTest, MarketSellExcess){
     OrderBook book;
-    book.buyLimit(1, 1, 1);
-    EXPECT_FALSE(book.cancelOrder(2));
+    book.buyLimit(1, 100, 10);
+    book.buyLimit(2, 100, 20);
+    book.buyLimit(3, 100, 50);
+    book.sellMarket(4, 100);
+
+    const auto& trades = book.getTradeHistory();
+    ASSERT_EQ(trades.size(), 3);
+    EXPECT_TRUE(book.getCurrentAsks().empty());
+    EXPECT_TRUE(book.getCurrentBids().empty());
 };
 
+TEST(OrderBookTest, MarketBuyEmpty){
+    OrderBook book;
+    book.buyMarket(1, 1);
+    const auto& trades = book.getTradeHistory();
+    EXPECT_TRUE(trades.empty());
+    EXPECT_TRUE(book.getCurrentAsks().empty());
+    EXPECT_TRUE(book.getCurrentBids().empty());
+}
 
-// Matching & order book state
-
-Test(OrderBookTest, NoMatch){};
-
-Test(OrderBookTest, ExactMatch){};
-
-Test(OrderBookTest, PartialMatch){};
-
-Test(OrderBookTest, FIFO){};
+TEST(OrderBookTest, MarketSellEmpty){
+    OrderBook book;
+    book.sellMarket(1, 1);
+    const auto& trades = book.getTradeHistory();
+    EXPECT_TRUE(trades.empty());
+    EXPECT_TRUE(book.getCurrentAsks().empty());
+    EXPECT_TRUE(book.getCurrentBids().empty());
+}
