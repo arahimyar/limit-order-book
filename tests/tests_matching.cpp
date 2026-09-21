@@ -97,9 +97,9 @@ TEST(OrderBookTest, ExactMatch_Buy){
     EXPECT_EQ(trade.price, 100);
     EXPECT_EQ(trade.quantity, 10);
 
-    EXPECT_THROW(book.getBestBid(), std::runtime_error)
-    EXPECT_THROW(book.getBestAsk(), std::runtime_error)
-    EXPECT_THROW(book.getSpread(), std::runtime_error)
+    EXPECT_THROW(book.getBestBid(), std::runtime_error);
+    EXPECT_THROW(book.getBestAsk(), std::runtime_error);
+    EXPECT_THROW(book.getSpread(), std::runtime_error);
 
     EXPECT_FALSE(book.getOrderInfo(1).has_value());
     EXPECT_FALSE(book.getOrderInfo(2).has_value());
