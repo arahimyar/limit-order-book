@@ -8,7 +8,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(FetchContent)
 
 FetchContent_Declare(googletest GIT_REPOSITORY https://github.com/google/googletest.git  GIT_TAG v1.14.0)
-FetchContent_MakeAvailable(googletest)
+
+set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(googlebenchmark GIT_REPOSITORY https://github.com/google/benchmark.git GIT_TAG v1.8.3)
+
+FetchContent_MakeAvailable(googletest googlebenchmark)
 
 add_library(OrderBookLib 
     src/Order.cpp 
@@ -29,5 +33,22 @@ add_executable(OrderBookTests
 )
 target_link_libraries(OrderBookTests PRIVATE OrderBookLib GTest::gtest_main)
 
+target_compile_options(OrderBookTests PRIVATE
+    -fsanitize=address,undefined
+    -fno-omit-frame-pointer)
+
+target_link_options(OrderBookTests PRIVATE
+    -fsanitize=address,undefined)
+
 include(GoogleTest)
 gtest_discover_tests(OrderBookTests)
+
+add_executable(OrderBookBenchmarks
+    benchmarks/benchmark_insertion.cpp
+    benchmarks/benchmark_cancelation.cpp
+    benchmarks/benchmark_limitMatching.cpp
+    benchmarks/benchmark_marketMatching.cpp
+    benchmarks/benchmark_realistic.cpp
+)
+
+target_link_libraries(OrderBookBenchmarks PRIVATE OrderBookLib benchmark::benchmark_main)
