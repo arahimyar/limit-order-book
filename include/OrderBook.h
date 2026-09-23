@@ -63,13 +63,14 @@ class OrderBook{
                             bestAvailable.price.value(),
                             amount_traded,
                             std::chrono::system_clock::now()
-                        };
+                };
                 tradeHistory.push_back(trade);
                 
                 if (bestAvailable.quantityRemaining <= order.quantityRemaining){
                         order.quantityRemaining -= bestAvailable.quantityRemaining;
+                        const auto bestAvailable_ID = bestAvailable.id;
+                        orderLookup.erase(bestAvailable_ID);
                         orders.erase(orders.begin());
-                        orderLookup.erase(bestAvailable.id);
                         if (orders.empty()){
                             book.erase(book.begin());
                         }
@@ -83,7 +84,6 @@ class OrderBook{
 
 
     public:
-
         void buyLimit(OrderID id, Price price, Quantity quantity) {
             Order order = Order{id, OrderType::LIMIT, Side::BUY, price, quantity, quantity};
             addOrder(order);

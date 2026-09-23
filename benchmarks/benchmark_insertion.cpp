@@ -26,3 +26,5 @@ static void BM_OrderInsertion(benchmark::State& state){
     }
     state.SetItemsProcessed(state.iterations() * N);
 };
+
+BENCHMARK(BM_OrderInsertion)->RangeMultiplier(10)->Range(100, 1000000);

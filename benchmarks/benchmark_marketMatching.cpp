@@ -36,3 +36,5 @@ static void BM_MarketMatching(benchmark::State& state){
     }
     state.SetItemsProcessed(state.iterations() * N);
 };
+
+BENCHMARK(BM_MarketMatching)->RangeMultiplier(10)->Range(100, 1000000);

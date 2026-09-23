@@ -37,3 +37,5 @@ static void BM_LimitMatching(benchmark::State& state){
     }
     state.SetItemsProcessed(state.iterations() * N);
 };
+
+BENCHMARK(BM_LimitMatching)->RangeMultiplier(10)->Range(100, 1000000);

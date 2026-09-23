@@ -37,3 +37,6 @@ static void BM_OrderCancelation(benchmark::State& state){
     }
     state.SetItemsProcessed(state.iterations() * N);
 };
+
+
+BENCHMARK(BM_OrderCancelation)->RangeMultiplier(10)->Range(100, 1000000);

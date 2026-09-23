@@ -7,7 +7,7 @@
 static void BM_realistic(benchmark::State& state){
     const int N = state.range(0);
     const int MOD = 10;
-    std::mt19937 gen();
+    std::mt19937 gen;
     std::vector<int> prices(N);
     std::vector<int> states(N);
     for (int i = 0; i < N; i++){
@@ -18,16 +18,16 @@ static void BM_realistic(benchmark::State& state){
     for (auto _ : state){
         OrderBook book;
         for (int i  = 0; i < N; i++){
-            if (state[i] < 20){
+            if (states[i] < 20){
                 book.buyLimit(i, prices[i], 10);
             }
-            else if (20 <= state[i] && states[i] < 40){
+            else if (20 <= states[i] && states[i] < 40){
                 book.sellLimit(i, prices[i], 10);
             }
-            else  if (40 <= state[i] && states[i] < 60){
+            else  if (40 <= states[i] && states[i] < 60){
                 if (i > 10) book.cancelOrder(i - 10);
             }
-            else  if (60 <= state[i] && states[i] < 80){
+            else  if (60 <= states[i] && states[i] < 80){
                 book.buyMarket(i, 10);
             }
             else{
@@ -39,3 +39,5 @@ static void BM_realistic(benchmark::State& state){
     state.SetItemsProcessed(state.iterations() * N);
 
 };
+
+BENCHMARK(BM_realistic)->RangeMultiplier(10)->Range(100, 1000000);
