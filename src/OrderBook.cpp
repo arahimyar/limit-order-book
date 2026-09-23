@@ -37,25 +37,27 @@ void OrderBook::addOrder(Order& order){
         
         if (order.quantityRemaining > 0) {
             if (order.side == Side::BUY) {
-                auto& orders = bids[order.price.value()];
-                auto iter = orders.insert(orders.end(), order);
-                OrderLocation location{
+                auto [priceLevelIter, ifPlaced] = bids.try_emplace(order.price.value());
+                auto& orders = priceLevelIter->second;
+                auto orderIter = orders.insert(orders.end(), order);
+                orderLookup[order.id] = OrderLocation{
                     Side::BUY,
                     order.price.value(),
-                    iter
+                    orderIter,
+                    priceLevelIter
                 };
-                orderLookup[order.id] = location;
 
             }
             else if (order.side == Side::SELL) {
-                auto& orders = asks[order.price.value()];
-                auto iter = orders.insert(orders.end(), order);
-                OrderLocation location{
+                auto [priceLevelIter, ifPlaced] = asks.try_emplace(order.price.value());
+                auto& orders = priceLevelIter->second;
+                auto orderIter = orders.insert(orders.end(), order);
+                orderLookup[order.id] = OrderLocation{
                     Side::SELL,
                     order.price.value(),
-                    iter
+                    orderIter,
+                    priceLevelIter
                 };
-                orderLookup[order.id] = location;
             }
                 }
     }
@@ -76,24 +78,16 @@ bool OrderBook::cancelOrder(OrderID orderID){
         return false;
     }
     const auto& location = iter -> second;
-    if (location.side == Side::BUY) {
-        auto priceLevel = bids.find(location.price);
-        priceLevel->second.erase(location.iterator);
-
-        if (priceLevel->second.empty()) {
-            bids.erase(priceLevel);
+    location.priceLevelIter -> second.erase(location.orderIter);
+    if (location.priceLevelIter -> second.empty()){
+        if (location.side == Side::BUY){
+            bids.erase(location.priceLevelIter);
+        }
+        else{
+            asks.erase(location.priceLevelIter);
         }
     }
-    else {
-        auto priceLevel = asks.find(location.price);
-        priceLevel->second.erase(location.iterator);
-
-        if (priceLevel->second.empty()) {
-            asks.erase(priceLevel);
-        }
-    }
-     orderLookup.erase(iter);
-
+    orderLookup.erase(iter);
     return true;
 };
 
@@ -131,7 +125,7 @@ std::optional<Order> OrderBook::getOrderInfo(OrderID orderID) const{
         return std::nullopt;
     }
 
-    return *(location -> second.iterator);
+    return *(location -> second.orderIter);
 
 };
 

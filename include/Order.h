@@ -4,6 +4,7 @@
 #include <chrono>
 #include <list>
 #include <optional>
+#include <map>
 
 using Price = std::int64_t;
 using OrderID = std::uint64_t;
@@ -33,7 +34,8 @@ struct Order{
 struct OrderLocation{
     Side side;
     Price price;
-    std::list<Order>::iterator iterator;
+    std::list<Order>::iterator orderIter;
+    std::map<Price, std::list<Order>>::iterator priceLevelIter;
 };
 
 struct TradeInfo {
