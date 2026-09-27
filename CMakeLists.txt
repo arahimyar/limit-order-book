@@ -18,6 +18,7 @@ add_library(OrderBookLib
     src/Order.cpp 
     src/OrderBook.cpp
     src/display.cpp
+    src/parser.cpp
 )
 
 target_include_directories(OrderBookLib PUBLIC include)
