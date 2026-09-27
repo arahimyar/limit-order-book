@@ -35,7 +35,7 @@ std::string makeBars(std::size_t count)
     std::string bars;
 
     for (std::size_t i = 0; i < count; ++i) {
-        bars += "#";
+        bars += "█";
     }
     return bars;
 };
@@ -98,7 +98,8 @@ void displayCurrentBook(const OrderBook& book, std::size_t N){
         const auto& iter = *it;
         std::uint32_t bar_size = (iter -> second.totalQuantity) / block_value;
         std::string bars = makeBars(bar_size);
-        std::cout << std::right << std::setw(bid_ask_width) << bars;
+        std::string padding(bid_ask_width - bar_size, ' ');
+        std::cout << padding << bars;
         std::cout << RED << center(formatPrice(iter -> first), price_width) << STANDARD;
         std::cout << std::string(bid_ask_width, ' ') << '\n';
     }
@@ -108,13 +109,15 @@ void displayCurrentBook(const OrderBook& book, std::size_t N){
         if (count++ >= N){
             break;
         }
-        std::cout << std::string(bid_ask_width, ' ');
-        std::cout << GREEN << center(formatPrice(price), price_width) << STANDARD;
+
         std::uint32_t bar_size = (level.totalQuantity) / block_value;
         std::string bars = makeBars(bar_size);
-        std::cout << std::left << std::setw(bid_ask_width) << bars << "\n";
+        std::string padding(bid_ask_width - bar_size, ' ');
+        std::cout << std::string(bid_ask_width, ' ');
+        std::cout << GREEN << center(formatPrice(price), price_width) << STANDARD;
+        std::cout << bars << padding << "\n";
     }
-    block_value > 1 ? std::cout << "SCALE: # ~ " << block_value << " units \n" : std::cout << "SCALE: # ~ " << block_value << " unit \n \n";
+    block_value > 1 ? std::cout << "SCALE: █ ~ " << block_value << " units \n" : std::cout << "SCALE: # ~ " << block_value << " unit \n \n";
 };
 
 void displayRecentTrades(const OrderBook& book, std::size_t N){
