@@ -3,12 +3,13 @@
 #include <algorithm>
 #include <iomanip>
 #include <vector>
+#include <sstream>
+#include <ctime>
 #include "OrderBook.h"
 #include "Order.h"
 #include "display.h"
 
-
-// Helper function to center string in output
+// Helper functions: 
 std::string center(const std::string& text, std::size_t width)
 {
     if (text.length() >= width){
@@ -22,6 +23,13 @@ std::string center(const std::string& text, std::size_t width)
     return std::string(left_padding, ' ') + text + std::string(right_padding, ' ');
 };
 
+std::string formatPrice(std::int64_t price, int scale = 100) {
+    std::string sign = (price < 0) ? "-" : "";
+    std::int64_t dollars = std::abs(price/scale);
+    std::int64_t cents = std::abs(price % scale);
+    return sign + std::to_string(dollars) + "." + (cents < 10 ? "0" : "") + std::to_string(cents);
+}
+
 void displayCurrentBook(const OrderBook& book, std::size_t N){
     constexpr const char* RED = "\033[31m";
     constexpr const char* GREEN = "\033[32m";
@@ -34,8 +42,8 @@ void displayCurrentBook(const OrderBook& book, std::size_t N){
     std::uint32_t bid_ask_width = 25;
     int price_padding = 3;
 
-    const auto& bids = book.getBids();
-    const auto& asks = book.getAsks();
+    const auto& bids = book.getCurrentBids();
+    const auto& asks = book.getCurrentAsks();
 
     Price max_price;
     if (asks.empty() && bids.empty()){
@@ -52,7 +60,7 @@ void displayCurrentBook(const OrderBook& book, std::size_t N){
             max_price = asks_iter -> first;
         }
     }
-    std::string price_string = std::to_string(max_price);
+    std::string price_string = formatPrice(max_price);
     int price_width = price_string.length() + 2*price_padding;
 
 
@@ -67,20 +75,22 @@ void displayCurrentBook(const OrderBook& book, std::size_t N){
     }
 
     std::uint32_t block_value = std::max<std::uint32_t>(1, max_quantity/bid_ask_width);
+    std::cout << center("ASK SIZE", bid_ask_width) << center("PRICE", price_width) << center("BID SIZE", bid_ask_width) << "\n";
 
-    std::cout << center("ASK SIZE", bid_ask_width) << center("PRICE", price_width) << center("BIDD  SIZE", bid_ask_width) << "\n";
-
-    std::vector<std::map<Price, std::list<Order>>::iterator>> recent_asks;
+    std::vector<decltype(asks.begin())> recent_asks;
     asks_iter = asks.begin();
     for(std::size_t i = 0; i < N && asks_iter != asks.end(); i++, asks_iter++){
         recent_asks.push_back(asks_iter);
     }
 
-    for(auto iter = recent_asks.rbegin(); iter != recent_asks.rend(); iter++){
+    for (auto it = recent_asks.rbegin(); it != recent_asks.rend(); it++) {
+        const auto& iter = *it;
         std::uint32_t bar_size = (iter -> second.totalQuantity) / block_value;
-        std::string bars = std::string(bar_size, '█');
-        cout << std::right << std::setw(bid_ask_width) << bars;
-        cout << RED << center(iter -> first, price_width) << STANDARD << "\n";
+        std::cout << std::right << std::setw(bid_ask_width);
+        for (std::size_t i = 0; i < bar_size; ++i) {
+            std::cout << "█";
+        }
+        std::cout << RED << center(formatPrice(iter -> first), price_width) << STANDARD << "\n";
     }
 
     std::size_t count = 0;
@@ -88,54 +98,63 @@ void displayCurrentBook(const OrderBook& book, std::size_t N){
         if (count++ >= N){
             break;
         }
-        cout << std::string(bid_ask_width, ' ');
-        cout << GREEN << center(price, price_width) << STANDARD;
+        std::cout << std::string(bid_ask_width, ' ');
+        std::cout << GREEN << center(formatPrice(price), price_width) << STANDARD;
         std::uint32_t bar_size = (level.totalQuantity) / block_value;
-        std::string bars = std::string(bar_size, '█');
-        cout << std::left << std::setw(bid_ask_width) << bars << "\n";
+        std::cout << std::left << std::setw(bid_ask_width);
+        for (std::size_t i = 0; i < bar_size; ++i) {
+            std::cout << "█";
+        }
+        std::cout << "\n";
     }
 };
 
 void displayRecentTrades(const OrderBook& book, std::size_t N){
-    const auto trades = book.getTradeHistory();
-    
+    const auto& trades = book.getTradeHistory();
+    N = std::min(N, trades.size());
     for(std::size_t i = 0; i < N; i++){
-        TradeInfo trade = trades[trades.size(() - 1 - i)];
-        std::cout << "Trade time: " << trade.time << "\n";
-        if (order.type == OrderType::LIMIT){
+        const auto& trade = trades[trades.size() - 1 - i];
+        auto time = std::chrono::system_clock::to_time_t(trade.time);
+        std::cout << "Time: " << std::ctime(&time) << "\n";
+        if (trade.type == OrderType::LIMIT){
             std::cout << "Type: Limit Order \n";
         }
         else{
-            std::cout << "Type: Marker Order \n";
+            std::cout << "Type: Market Order \n";
         }
         std::cout << "Buyer ID: " << trade.buyOrderID << "\n";  
         std::cout << "Seller ID: " << trade.sellOrderID << "\n";    
         std::cout << "Quantity: " << trade.quantity << "\n";  
-        std::cout << "Price: $" << std::fixed << std::setprecision(2) << trade.price << "\n";  
+        std::cout << "Price: $" << formatPrice(trade.price) << "\n";  
     }
 };
 
-void displayBookStatus(const OrderBook& book){
-    std::cout << "Current spread: $" << std::fixed << std::setprecision(2) << book.getSpread() << "\n";
-    std::cout << "Current best bid: $" << std::fixed << std::setprecision(2) << book.getBestBid() << "\n";
-    std::cout << "Current best ask: $" << std::fixed << std::setprecision(2) << book.getBestAsk() << "\n";
-};
+void displayBookStatus(const OrderBook& book) {
+    const auto bestBid = book.getBestBid();
+    const auto bestAsk = book.getBestAsk();
+    const auto spread  = book.getSpread();
+
+    std::cout << "Current best bid: " << (bestBid ? "$" + formatPrice(*bestBid) : "N/A") << "\n";
+    std::cout << "Current best ask: " << (bestAsk ? "$" + formatPrice(*bestAsk) : "N/A") << "\n";
+    std::cout << "Current spread: " << (spread  ? "$" + formatPrice(*spread)  : "N/A") << "\n";
+}
 
 void displayOrderInfo(const OrderBook& book, OrderID ID){
     const auto orderOptional = book.getOrderInfo(ID);
     if (!orderOptional.has_value()){
         std::cout << "ERROR: Order not found. \n";
+        return;
     }
     
     const Order& order = *orderOptional;
     std::cout << "Order ID: " << order.id << "\n";
-    if (order.type == Side::BUY){
+    if (order.side == Side::BUY){
         std::cout << "Side: Bid" << "\n";
     }
     else{
         std::cout << "Side: Ask" << "\n";
     }
-    std::cout << "Price: " << std::fixed << std::setprecision(2) << order.price << "\n";
+    std::cout << "Price: " << formatPrice(*order.price) << "\n";
     std::cout << "Original Quantity: " << order.quantityOriginal << "\n";
     std::cout << "Remaining Quantity: " << order.quantityRemaining << "\n";
     std::cout << "Quantity Filled: " << order.quantityOriginal - order.quantityRemaining  << "\n";    

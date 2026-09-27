@@ -17,6 +17,7 @@ FetchContent_MakeAvailable(googletest googlebenchmark)
 add_library(OrderBookLib 
     src/Order.cpp 
     src/OrderBook.cpp
+    src/display.cpp
 )
 
 target_include_directories(OrderBookLib PUBLIC include)

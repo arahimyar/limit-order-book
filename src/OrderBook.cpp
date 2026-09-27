@@ -91,32 +91,25 @@ bool OrderBook::cancelOrder(OrderID orderID){
     return true;
 };
 
-Price OrderBook::getSpread() const{
-    if (bids.empty()){
-        throw std::runtime_error("Cannot compute spread: bids is empty.");
-    }
-    if (asks.empty()){
-        throw std::runtime_error("Cannot compute spread: asks is empty.");
-    }
-    Price best_bid = bids.begin() -> first;
-    Price best_ask = asks.begin() -> first;
-    return best_ask - best_bid;
-};
-
-Price OrderBook::getBestBid() const{
-    if (bids.empty()){
-        throw std::runtime_error("Cannot compute spread: bids is empty.");
-    }
-    Price best_bid = bids.begin() -> first;
-    return best_bid;
+std::optional<Price> OrderBook::getSpread() const {
+    if (bids.empty() || asks.empty()){
+        return std::nullopt;;
+    } 
+    return asks.begin() -> first - bids.begin() -> first;
 }
 
-Price OrderBook::getBestAsk() const{
+std::optional<Price> OrderBook::getBestBid() const {
+    if (bids.empty()){
+        return std::nullopt;
+    } 
+    return bids.begin() -> first;
+}
+
+std::optional<Price> OrderBook::getBestAsk() const{
     if (asks.empty()){
-        throw std::runtime_error("Cannot compute spread: asks is empty.");
+        return  std::nullopt;
     }
-    Price best_ask = asks.begin() -> first;
-    return best_ask;
+    return asks.begin() -> first;
 }
 
 std::optional<Order> OrderBook::getOrderInfo(OrderID orderID) const{

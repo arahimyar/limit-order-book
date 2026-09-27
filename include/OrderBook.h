@@ -105,9 +105,9 @@ class OrderBook{
 
         bool cancelOrder(OrderID orderID);
 
-        Price getSpread() const;
-        Price getBestBid() const;
-        Price getBestAsk() const;
+        std::optional<Price> getSpread() const;
+        std::optional<Price> getBestBid() const;
+        std::optional<Price> getBestAsk() const;
 
         std::optional<Order> getOrderInfo(OrderID) const;
         std::map<Price, PriceLevel, std::greater<Price>> getCurrentBids() const;
