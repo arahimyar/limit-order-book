@@ -5,11 +5,11 @@
 #include <vector>
 #include <sstream>
 #include <ctime>
+
 #include "OrderBook.h"
 #include "Order.h"
 #include "display.h"
 
-// Helper functions: 
 std::string center(const std::string& text, std::size_t width)
 {
     if (text.length() >= width){
@@ -23,6 +23,7 @@ std::string center(const std::string& text, std::size_t width)
     return std::string(left_padding, ' ') + text + std::string(right_padding, ' ');
 };
 
+// Formats integer prices from cents to a dollar-cent format
 std::string formatPrice(std::int64_t price, int scale = 100) {
     std::string sign = (price < 0) ? "-" : "";
     std::int64_t dollars = std::abs(price/scale);
@@ -33,7 +34,6 @@ std::string formatPrice(std::int64_t price, int scale = 100) {
 std::string makeBars(std::size_t count)
 {
     std::string bars;
-
     for (std::size_t i = 0; i < count; ++i) {
         bars += "█";
     }
@@ -117,7 +117,7 @@ void displayCurrentBook(const OrderBook& book, std::size_t N){
         std::cout << GREEN << center(formatPrice(price), price_width) << STANDARD;
         std::cout << bars << padding << "\n";
     }
-    block_value > 1 ? std::cout << "SCALE: █ ~ " << block_value << " units \n" : std::cout << "SCALE: # ~ " << block_value << " unit \n \n";
+    block_value > 1 ? std::cout << "SCALE: █ ~ " << block_value << " units \n\n" : std::cout << "SCALE: █ ~ " << block_value << " unit \n\n";
 };
 
 void displayRecentTrades(const OrderBook& book, std::size_t N){
@@ -151,7 +151,7 @@ void displayBookStatus(const OrderBook& book) {
     std::cout << "Current best ask: " << (bestAsk ? "$" + formatPrice(*bestAsk) : "N/A") << "\n";
     std::cout << "Current spread: " << (spread  ? "$" + formatPrice(*spread)  : "N/A") << "\n";
     std::cout << "\n";
-}
+};
 
 void displayOrderInfo(const OrderBook& book, OrderID ID){
     const auto orderOptional = book.getOrderInfo(ID);

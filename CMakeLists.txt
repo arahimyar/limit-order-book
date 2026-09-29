@@ -15,7 +15,6 @@ FetchContent_Declare(googlebenchmark GIT_REPOSITORY https://github.com/google/be
 FetchContent_MakeAvailable(googletest googlebenchmark)
 
 add_library(OrderBookLib 
-    src/Order.cpp 
     src/OrderBook.cpp
     src/display.cpp
     src/parser.cpp

@@ -8,5 +8,5 @@
 int main()
 {
     OrderBook book;
-    OrderBook_API(book);
+    runOrderBook(book);
 }

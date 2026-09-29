@@ -22,6 +22,7 @@ enum class Side{
     SELL
 };
 
+// Prices are null for market orders
 struct Order{
     OrderID id;
     OrderType type;
@@ -31,6 +32,8 @@ struct Order{
     Quantity quantityRemaining;
 };
 
+// orderIter is used to locate order in the price level linked list
+// priceLevelIter is used to locate price level in std::map of prices
 struct OrderLocation{
     Side side;
     Price price;
@@ -47,6 +50,8 @@ struct TradeInfo {
     Time time;
 };
 
+// totalQuantity is the total number of units at that price level
+// orderCount is the number of orders at that price level
 struct PriceLevel{
     Quantity totalQuantity = 0;
     OrderCount orderCount = 0;

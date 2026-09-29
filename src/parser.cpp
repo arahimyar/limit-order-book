@@ -1,11 +1,165 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+
 #include "parser.h"
 #include "display.h"
 
 
-void OrderBook_API(OrderBook& book){
+void buying(OrderBook& book, std::istringstream& input){
+    std::string type;
+    input >> type;
+
+    if (type == "limit") {
+        std::string idString;
+        std::string priceString;
+        std::string quantityString;
+
+        if (!(input >> idString >> priceString >> quantityString)) {
+            std::cout << "Input error. Command must be of the form: buy limit <id> <price> <quantity>\n";
+            return;
+        }
+
+        if (priceString.find('.') != std::string::npos) {
+            std::cout << "Input error: price must be an integer number of cents.\n";
+            return;
+        }
+
+        try {
+            OrderID id = std::stoull(idString);
+            Price price = std::stoll(priceString);
+            Quantity quantity = std::stoull(quantityString);
+
+            book.buyLimit(id, price, quantity);
+        }
+        catch (const std::exception& e) {
+            std::cout << "Order rejected: " << e.what() << '\n';
+        }
+    }
+    else if (type == "market") {
+        std::string idString;
+        std::string quantityString;
+
+        if (!(input >> idString >> quantityString)) {
+            std::cout << "Input error. Command must be of the form: buy market <id> <quantity>\n";
+            return;
+        }
+
+        try {
+            OrderID id = std::stoull(idString);
+            Quantity quantity = std::stoull(quantityString);
+
+            book.buyMarket(id, quantity);
+        }
+        catch (const std::exception& e) {
+            std::cout << "Order rejected: " << e.what() << '\n';
+        }
+    }
+    else {
+        std::cout << "Unknown order type: " << type << '\n';
+    }
+};
+
+void selling(OrderBook& book, std::istringstream& input){
+    std::string type;
+    input >> type;
+
+    if (type == "limit") {
+        std::string idString;
+        std::string priceString;
+        std::string quantityString;
+
+        if (!(input >> idString >> priceString >> quantityString)) {
+            std::cout << "Input error. Command must be of the form: sell limit <id> <price> <quantity>\n";
+            return;
+        }
+
+        if (priceString.find('.') != std::string::npos) {
+            std::cout << "Input error: price must be an integer number of cents. \n";
+            return;
+        }
+
+        try {
+            OrderID id = std::stoull(idString);
+            Price price = std::stoll(priceString);
+            Quantity quantity = std::stoull(quantityString);
+
+            book.sellLimit(id, price, quantity);
+        }
+        catch (const std::exception& e) {
+            std::cout << "Order rejected: " << e.what() << '\n';
+        }
+    }
+    else if (type == "market") {
+        std::string idString;
+        std::string quantityString;
+
+        if (!(input >> idString >> quantityString)) {
+            std::cout << "Input error. Command must be of the form: sell market <id> <quantity>\n";
+            return;
+        }
+
+        try {
+            OrderID id = std::stoull(idString);
+            Quantity quantity = std::stoull(quantityString);
+
+            book.sellMarket(id, quantity);
+        }
+        catch (const std::exception& e) {
+            std::cout << "Order rejected: " << e.what() << '\n';
+        }
+    }
+    else {
+        std::cout << "Unknown order type: " << type << '\n';
+    }
+};
+
+void canceling(OrderBook& book, std::istringstream& input){
+    OrderID id;
+    if (!(input >> id)) {
+        std::cout << "Input error. Command must be of the form: cancel <id>\n";
+        return;
+    }
+
+    if (book.cancelOrder(id)) {
+        std::cout << "Order " << id << " cancelled.\n";
+    }
+    else {
+        std::cout << "Order " << id << " not found.\n";
+    }
+};
+
+void displaying(OrderBook& book, std::istringstream& input){
+    std::string type;
+    input >> type;
+    if (type == "book") {
+        std::size_t N = 10;
+        input >> N;
+
+        displayCurrentBook(book, N);
+    }
+    else if (type == "trades") {
+        std::size_t N = 5;
+        input >> N;
+        displayRecentTrades(book, N);
+    }
+    else if (type == "status") {
+        displayBookStatus(book);
+    }
+    else if (type == "order") {
+        OrderID id;
+        if (!(input >> id)) {
+            std::cout << "Input error. Command must be of the form: display order <id>\n";
+            return;
+        }
+        displayOrderInfo(book, id);
+    }
+    else {
+        std::cout << "Unknown display type: " << type << '\n';
+    }
+};
+
+void runOrderBook(OrderBook& book){
     std::string line;
 
     while (true) {
@@ -17,169 +171,18 @@ void OrderBook_API(OrderBook& book){
         std::string command;
         input >> command;
 
-        // Buying
-        if (command == "buy") {
-            std::string type;
-            input >> type;
-
-            if (type == "limit") {
-                std::string idString;
-                std::string priceString;
-                std::string quantityString;
-
-                if (!(input >> idString >> priceString >> quantityString)) {
-                    std::cout << "Input error. Command must be of the form: buy limit <id> <price> <quantity>\n";
-                    continue;
-                }
-
-                if (priceString.find('.') != std::string::npos) {
-                    std::cout << "Input error: price must be an integer number of cents.\n";
-                    continue;
-                }
-
-                try {
-                    OrderID id = std::stoull(idString);
-                    Price price = std::stoll(priceString);
-                    Quantity quantity = std::stoull(quantityString);
-
-                    book.buyLimit(id, price, quantity);
-                }
-                catch (const std::exception& e) {
-                    std::cout << "Order rejected: " << e.what() << '\n';
-                }
-            }
-            else if (type == "market") {
-                std::string idString;
-                std::string quantityString;
-
-                if (!(input >> idString >> quantityString)) {
-                    std::cout << "Input error. Command must be of the form: buy market <id> <quantity>\n";
-                    continue;
-                }
-
-                try {
-                    OrderID id = std::stoull(idString);
-                    Quantity quantity = std::stoull(quantityString);
-
-                    book.buyMarket(id, quantity);
-                }
-                catch (const std::exception& e) {
-                    std::cout << "Order rejected: " << e.what() << '\n';
-                }
-            }
-            else {
-                std::cout << "Unknown order type: " << type << '\n';
-            }
+        if (command == "buy"){
+            buying(book, input);
         }
-
-        // Selling
-        else if (command == "sell") {
-            std::string type;
-            input >> type;
-
-            if (type == "limit") {
-                std::string idString;
-                std::string priceString;
-                std::string quantityString;
-
-                if (!(input >> idString >> priceString >> quantityString)) {
-                    std::cout << "Input error. Command must be of the form: buy limit <id> <price> <quantity>\n";
-                    continue;
-                }
-
-                if (priceString.find('.') != std::string::npos) {
-                    std::cout << "Input error: price must be an integer number of cents. \n";
-                    continue;
-                }
-
-                try {
-                    OrderID id = std::stoull(idString);
-                    Price price = std::stoll(priceString);
-                    Quantity quantity = std::stoull(quantityString);
-
-                    book.sellLimit(id, price, quantity);
-                }
-                catch (const std::exception& e) {
-                    std::cout << "Order rejected: " << e.what() << '\n';
-                }
-            }
-            else if (type == "market") {
-                std::string idString;
-                std::string quantityString;
-
-                if (!(input >> idString >> quantityString)) {
-                    std::cout << "Input error. Command must be of the form: buy market <id> <quantity>\n";
-                    continue;
-                }
-
-                try {
-                    OrderID id = std::stoull(idString);
-                    Quantity quantity = std::stoull(quantityString);
-
-                    book.sellMarket(id, quantity);
-                }
-                catch (const std::exception& e) {
-                    std::cout << "Order rejected: " << e.what() << '\n';
-                }
-            }
-            else {
-                std::cout << "Unknown order type: " << type << '\n';
-            }
+        else if (command == "sell"){
+            selling(book, input);
         }
-
-        // Cancel order
-        else if (command == "cancel") {
-            OrderID id;
-
-            if (!(input >> id)) {
-                std::cout << "Input error. Command must be of the form: cancel <id>\n";
-                continue;
-            }
-
-            if (book.cancelOrder(id)) {
-                std::cout << "Order " << id << " cancelled.\n";
-            }
-            else {
-                std::cout << "Order " << id << " not found.\n";
-            }
+        else if (command == "cancel"){
+            canceling(book, input);
         }
-
-        // Display 
-        else if (command == "display") {
-            std::string type;
-            input >> type;
-
-            if (type == "book") {
-                std::size_t N = 10;
-                input >> N;
-
-                displayCurrentBook(book, N);
-            }
-            else if (type == "trades") {
-                std::size_t N = 5;
-                input >> N;
-
-                displayRecentTrades(book, N);
-            }
-            else if (type == "status") {
-                displayBookStatus(book);
-            }
-            else if (type == "order") {
-                OrderID id;
-
-                if (!(input >> id)) {
-                    std::cout << "Input error. Command must be of the form: display order <id>\n";
-                    continue;
-                }
-
-                displayOrderInfo(book, id);
-            }
-            else {
-                std::cout << "Unknown display type: " << type << '\n';
-            }
+        else if (command == "display"){
+            displaying(book, input);
         }
-
-        // Help 
         else if (command == "help") {
             std::cout
                 << "\nCommands:\n"
@@ -196,13 +199,11 @@ void OrderBook_API(OrderBook& book){
                 << "  quit\n"
                 << "See documentation for more details.\n\n";
         }
-
-        // Quit
         else if (command == "quit") {
             break;
         }
         else if (command.empty()) {
-            continue;
+            return;
         }
         else {
             std::cout << "Unknown command: " << command << '\n';

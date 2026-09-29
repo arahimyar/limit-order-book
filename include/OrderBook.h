@@ -1,5 +1,5 @@
 #pragma once
-#include "Order.h"
+
 #include <cstdint>
 #include <map>
 #include <unordered_map>
@@ -8,6 +8,7 @@
 #include <functional>
 #include <optional>
 
+#include "Order.h"
 
 class OrderBook{
     private:
