@@ -1,10 +1,55 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <fstream>
 
 #include "parser.h"
 #include "display.h"
 
+void loading(OrderBook& book, std::istringstream& input){
+    std::string filename;
+
+    if (!(input >> filename)) {
+        std::cout << "Input error. Command must be of the form: load <filename>\n";
+        return;
+    }
+
+    std::ifstream file(filename);
+
+    if (!file) {
+        std::cout << "Error: could not open file: " << filename << '\n';
+        return;
+    }
+
+    std::string line;
+    std::size_t count = 0;
+
+    while (std::getline(file, line)){
+        if (line.empty()){
+            continue;
+        }
+
+        std::istringstream inputCommand(line);
+        std::string command;
+        inputCommand >> command;
+
+        if (command == "buy"){
+            buying(book, inputCommand);
+        }
+        else if(command == "sell"){
+            selling(book, inputCommand);
+        }
+        else if (command == "cancel"){
+            canceling(book, inputCommand);
+        }
+        else {
+            std::cout << "Unknown command in file: " << filename << "\n";
+            continue;
+        }
+        count++;
+    }
+    std::cout << "Successfully loaded " << count << " commands from " << filename << ".\n";
+};
 
 void buying(OrderBook& book, std::istringstream& input){
     std::string type;
@@ -171,7 +216,10 @@ void runOrderBook(OrderBook& book){
         std::string command;
         input >> command;
 
-        if (command == "buy"){
+        if (command == "load"){
+            loading(book, input);
+        }
+        else if (command == "buy"){
             buying(book, input);
         }
         else if (command == "sell"){
@@ -191,6 +239,7 @@ void runOrderBook(OrderBook& book){
                 << "  sell limit <id> <price> <quantity>\n"
                 << "  sell market <id> <quantity>\n"
                 << "  cancel <id>\n"
+                << "  load <file name>\n"
                 << "  display book [N]\n"
                 << "  display trades [N]\n"
                 << "  display status\n"
