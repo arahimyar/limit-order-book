@@ -86,7 +86,7 @@ void displayCurrentBook(const OrderBook& book, std::size_t N){
 
     std::uint32_t block_value = std::max<std::uint32_t>(1, max_quantity/bid_ask_width);
     std::cout << "\n";
-    std::cout << center("ASK SIZE", bid_ask_width) << center("PRICE", price_width) << center("BID SIZE", bid_ask_width) << "\n";
+    std::cout << center("ASK VOLUME", bid_ask_width) << center("PRICE", price_width) << center("BID VOLUME", bid_ask_width) << "\n";
 
     std::vector<decltype(asks.begin())> recent_asks;
     asks_iter = asks.begin();

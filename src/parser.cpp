@@ -40,7 +40,7 @@ void loading(OrderBook& book, std::istringstream& input){
             selling(book, inputCommand);
         }
         else if (command == "cancel"){
-            canceling(book, inputCommand);
+            cancelling(book, inputCommand);
         }
         else {
             std::cout << "Unknown command in file: " << filename << "\n";
@@ -159,7 +159,7 @@ void selling(OrderBook& book, std::istringstream& input){
     }
 };
 
-void canceling(OrderBook& book, std::istringstream& input){
+void cancelling(OrderBook& book, std::istringstream& input){
     OrderID id;
     if (!(input >> id)) {
         std::cout << "Input error. Command must be of the form: cancel <id>\n";
@@ -226,7 +226,7 @@ void runOrderBook(OrderBook& book){
             selling(book, input);
         }
         else if (command == "cancel"){
-            canceling(book, input);
+            cancelling(book, input);
         }
         else if (command == "display"){
             displaying(book, input);
@@ -246,7 +246,7 @@ void runOrderBook(OrderBook& book){
                 << "  display order <id>\n"
                 << "  help\n"
                 << "  quit\n"
-                << "See documentation for more details.\n\n";
+                << "See README for more details.\n\n";
         }
         else if (command == "quit") {
             break;
