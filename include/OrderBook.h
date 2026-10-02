@@ -72,7 +72,14 @@ class OrderBook{
             while (!book.empty() && order.quantityRemaining > 0){
                 auto& orders = book.begin() -> second;
                 Order& bestAvailable = orders.front();
-                Quantity amount_traded = std::min(order.quantityRemaining, bestAvailable.quantityRemaining);
+                Quantity amount_traded;
+                if (bestAvailable.type == OrderType::ICEBERG){
+                    auto& iceberg = std::get<IcebergData>(bestAvailable.typeSpecificData);
+                    amount_traded = std::min(order.quantityRemaining, iceberg.quantityDisplayed);
+                }
+                else{
+                    amount_traded = std::min(order.quantityRemaining, bestAvailable.quantityRemaining);
+                }
                 TradeInfo trade {
                             OrderType::MARKET, 
                             order.side == Side::BUY ? order.id : bestAvailable.id,
@@ -82,19 +89,23 @@ class OrderBook{
                             std::chrono::system_clock::now()
                 };
                 tradeHistory.push_back(trade);
-                
-                if (bestAvailable.quantityRemaining <= order.quantityRemaining){
-                        order.quantityRemaining -= bestAvailable.quantityRemaining;
-                        const auto bestAvailable_ID = bestAvailable.id;
-                        orderLookup.erase(bestAvailable_ID);
-                        orders.erase(orders.begin());
-                        if (orders.empty()){
-                            book.erase(book.begin());
-                        }
+                bestAvailable.quantityRemaining -= amount_traded;
+                order.quantityRemaining -= amount_traded;
+                if (bestAvailable.quantityRemaining == 0){
+                    const auto bestAvailable_ID = bestAvailable.id;
+                    orderLookup.erase(bestAvailable_ID);
+                    orders.erase(orders.begin());
+                    if (orders.empty()){
+                        book.erase(book.begin());
+                    }
                 }
-                else{
-                    bestAvailable.quantityRemaining -= order.quantityRemaining;
-                    order.quantityRemaining = 0;
+                else if (bestAvailable.type == OrderType::ICEBERG){
+                    auto& iceberg = std::get<IcebergData>(bestAvailable.typeSpecificData);
+                    iceberg.quantityDisplayed -= amount_traded;
+                    if (iceberg.quantityDisplayed == 0){
+                        iceberg.quantityDisplayed = std::min(bestAvailable.quantityRemaining, iceberg.peakSize);
+                        orders.splice(orders.end(), orders, orders.begin());
+                    }
                 }
             }
         };
