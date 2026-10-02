@@ -24,10 +24,16 @@ class OrderBook{
             while (!book.empty() 
                     && order.quantityRemaining > 0 
                     && (order.side == Side::BUY ? order.price.value() >= book.begin() -> first : order.price.value() <= book.begin() -> first)){
-                
                 auto& orders = book.begin() -> second;
                 Order& firstOrder = orders.front();
-                Quantity amount_traded = std::min(firstOrder.quantityRemaining, order.quantityRemaining);
+                Quantity amount_traded;
+                if (firstOrder.type == OrderType::ICEBERG){
+                    auto& iceberg = std::get<IcebergData>(firstOrder.typeSpecificData);
+                    amount_traded = std::min(iceberg.quantityDisplayed, order.quantityRemaining);
+                } 
+                else{
+                   amount_traded = std::min(firstOrder.quantityRemaining, order.quantityRemaining);
+                }
                 TradeInfo trade {
                         OrderType::LIMIT,
                         order.side == Side::BUY ? order.id : firstOrder.id,
@@ -39,6 +45,10 @@ class OrderBook{
                 tradeHistory.push_back(trade);
                 order.quantityRemaining -= amount_traded;
                 firstOrder.quantityRemaining -= amount_traded;
+                if (firstOrder.type == OrderType::ICEBERG){
+                    auto& iceberg = std::get<IcebergData>(firstOrder.typeSpecificData);
+                    iceberg.quantityDisplayed -= amount_traded;
+                }                
 
                 if (firstOrder.quantityRemaining == 0){
                     orderLookup.erase(firstOrder.id);
@@ -46,7 +56,13 @@ class OrderBook{
                     if (orders.empty()){
                         book.erase(book.begin());
                     }
-
+                }
+                else if (firstOrder.type == OrderType::ICEBERG){
+                    auto& iceberg = std::get<IcebergData>(firstOrder.typeSpecificData);
+                    if (iceberg.quantityDisplayed == 0){
+                    iceberg.quantityDisplayed = std::min(firstOrder.quantityRemaining, iceberg.peakSize);
+                    orders.splice(orders.end(), orders, orders.begin());
+                    }
                 }
             }
         };

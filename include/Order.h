@@ -5,6 +5,7 @@
 #include <list>
 #include <optional>
 #include <map>
+#include <variant>
 
 using Price = std::int64_t;
 using OrderID = std::uint64_t;
@@ -12,14 +13,27 @@ using Quantity = std::uint32_t;
 using Time = std::chrono::system_clock::time_point;
 using OrderCount = std::uint32_t;
 
+
+
 enum class OrderType{
     LIMIT,
-    MARKET
+    MARKET,
+    ICEBERG,
+    STOP_LOSS
 };
 
 enum class Side{
     BUY,
     SELL
+};
+
+struct IcebergData{
+    Quantity peakSize;
+    Quantity quantityDisplayed;
+};
+
+struct StopLossData{
+    Price stopPrice;
 };
 
 // Prices are null for market orders
@@ -30,6 +44,7 @@ struct Order{
     std::optional<Price> price;
     Quantity quantityOriginal; 
     Quantity quantityRemaining;
+    std::variant<std::monostate, IcebergData, StopLossData> typeSpecificData;
 };
 
 // orderIter is used to locate order in the price level linked list

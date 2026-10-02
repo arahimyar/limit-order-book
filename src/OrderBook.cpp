@@ -1,4 +1,3 @@
-#include "OrderBook.h"
 #include <cstdint>
 #include <algorithm>
 #include <iterator>
@@ -6,6 +5,8 @@
 #include <chrono>
 #include <stdexcept>
 #include <optional>
+
+#include "OrderBook.h"
 
 void OrderBook::addOrder(Order& order){
     if(orderLookup.contains(order.id)){
