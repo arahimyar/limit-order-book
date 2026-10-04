@@ -110,6 +110,35 @@ class OrderBook{
             }
         };
 
+        template <typename Book>
+        void matchIcebergOrder(Order& order, Book& book){
+            auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
+            while (!book.empty() && iceberg.quantityDisplayed > 0
+                    && (order.side == Side::BUY ? order.price.value() >= book.begin() -> first : order.price.value() <= book.begin() -> first)){
+                auto& orders = book.begin() -> second;
+                Order& bestOrder = orders.front();
+                Quantity amount_traded = std::min(iceberg.quantityDisplayed, bestOrder.quantityRemaining);
+                TradeInfo trade {
+                            OrderType::ICEBERG, 
+                            order.side == Side::BUY ? order.id : bestOrder.id,
+                            order.side == Side::BUY ? bestOrder.id : order.id,
+                            bestOrder.price.value(),
+                            amount_traded,
+                            std::chrono::system_clock::now()
+                };
+                tradeHistory.push_back(trade);
+                order.quantityRemaining -= amount_traded;
+                iceberg.quantityDisplayed -= amount_traded;
+                bestOrder.quantityRemaining -= amount_traded;
+                if (bestOrder.quantityRemaining == 0){
+                    orderLookup.erase(bestOrder.id);
+                    orders.erase(orders.begin());
+                    if (orders.empty()){
+                        book.erase(book.begin());
+                    }
+                }
+            }
+        };
 
     public:
         void buyLimit(OrderID id, Price price, Quantity quantity) {
