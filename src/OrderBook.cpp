@@ -71,6 +71,29 @@ void OrderBook::addOrder(Order& order){
         }
     }
 
+    else if (order.type == OrderType::ICEBERG){
+        while (order.quantityRemaining > 0){
+            matchIcebergOrder(order, order.side == Side::BUY ? asks : bids);
+            auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
+            if(iceberg.quantityDisplayed > 0){
+                break;
+            }
+            iceberg.quantityDisplayed = std::min(iceberg.peakSize, order.quantityRemaining);
+        }
+        if (order.quantityRemaining > 0){
+            auto& book = (order.side == Side::BUY ? bids : asks);
+            auto [priceLevelIter, ifPlaced] = book.try_emplace(order.price.value());
+            auto& orders = priceLevelIter->second;
+            auto orderIter = orders.insert(orders.end(), order);
+            orderLookup[order.id] = OrderLocation{
+                order.side,
+                order.price.value(),
+                orderIter,
+                priceLevelIter
+            };
+        }
+    }
+
 };
 
 bool OrderBook::cancelOrder(OrderID orderID){
