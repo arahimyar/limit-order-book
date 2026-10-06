@@ -7,6 +7,7 @@
 #include <vector>
 #include <functional>
 #include <optional>
+#include <queue>
 
 #include "Order.h"
 
@@ -16,11 +17,16 @@ class OrderBook{
         std::map<Price, std::list<Order>> asks;
         std::unordered_map<OrderID, OrderLocation> orderLookup;
         std::vector<TradeInfo> tradeHistory;
+        std::map<Price, std::list<Order>> stopLoss_bids;
+        std::map<Price, std::list<Order>, std::greater<Price>> stopLoss_asks;
+        std::queue<Order> pendingStopLoss_Buys;
+        std::queue<Order> pendingStopLoss_Sells;
 
         void addOrder(Order& order);
 
         template <typename Book>
         void matchLimitOrder(Order& order, Book& book){
+            std::optional<Price> lastTradePrice;
             while (!book.empty() 
                     && order.quantityRemaining > 0 
                     && (order.side == Side::BUY ? order.price.value() >= book.begin() -> first : order.price.value() <= book.begin() -> first)){
@@ -35,6 +41,7 @@ class OrderBook{
                         amount_traded,
                         std::chrono::system_clock::now()
                     };
+                lastTradePrice = firstOrder.price.value();
                 tradeHistory.push_back(trade);
                 order.quantityRemaining -= amount_traded;
                 firstOrder.quantityRemaining -= amount_traded;
@@ -55,6 +62,10 @@ class OrderBook{
                     }
                 }
             }
+
+        if (lastTradePrice.has_value()){
+            // Fill this out
+        }
         };
 
         template <typename Book>
@@ -123,6 +134,58 @@ class OrderBook{
             }
         };
 
+        template <typename Queue, typename Book, typename StopBook>
+        void matchStopLossOrder(Queue& stop_queue, Book& book, StopBook& stopBook){
+            while (!stop_queue.empty()){
+                Order order = std::move(stop_queue.front());
+                stop_queue.pop();
+
+                while (!book.empty() && order.quantityRemaining > 0){
+                    auto& orders = book.begin() -> second;
+                    Order& bestAvailable = orders.front();
+                    Quantity amount_traded = std::min(order.quantityRemaining, bestAvailable.quantityRemaining);
+                    Price price_traded = bestAvailable.price.value();
+                    TradeInfo trade {
+                                OrderType::STOP_LOSS, 
+                                order.side == Side::BUY ? order.id : bestAvailable.id,
+                                order.side == Side::BUY ? bestAvailable.id : order.id,
+                                price_traded,
+                                amount_traded,
+                                std::chrono::system_clock::now()
+                    };
+                    tradeHistory.push_back(trade);
+                    bestAvailable.quantityRemaining -= amount_traded;
+                    order.quantityRemaining -= amount_traded;
+                    if (bestAvailable.type == OrderType::ICEBERG){
+                        auto& iceberg = std::get<IcebergData>(bestAvailable.typeSpecificData);
+                        iceberg.quantityTotalRemaining -= amount_traded;
+                        if (bestAvailable.quantityRemaining == 0 && iceberg.quantityTotalRemaining > 0){
+                            bestAvailable.quantityRemaining = std::min(iceberg.quantityTotalRemaining, iceberg.peakSize);
+                            orders.splice(orders.end(), orders, orders.begin());
+                        }
+                    }
+                    if (bestAvailable.quantityRemaining == 0){
+                        const auto bestAvailable_ID = bestAvailable.id;
+                        orderLookup.erase(bestAvailable_ID);
+                        orders.erase(orders.begin());
+                        if (orders.empty()){
+                            book.erase(book.begin());
+                        }
+                    }
+
+                    while (!stopBook.empty() && 
+                        (order.side == Side::BUY ? stopBook.begin()->first <= price_traded : stopBook.begin()->first>= price_traded)){
+                        auto& stopOrders = stopBook.begin()->second;
+                        for (auto& stopOrder : stopOrders) {
+                            stop_queue.push(std::move(stopOrder));
+                        }
+                        stopBook.erase(stopBook.begin());
+                    }
+                }
+                
+            }
+        };
+
     public:
         void buyLimit(OrderID id, Price price, Quantity quantity) {
             Order order = Order{id, OrderType::LIMIT, Side::BUY, price, quantity, quantity};
@@ -144,18 +207,22 @@ class OrderBook{
         };
 
         void buyIceberg(OrderID id, Price price, Quantity quantity, Quantity peak) {
-            Order order = Order{id, OrderType::ICEBERG, Side::BUY, price, quantity, std::min(peak, quantity)};
-            auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
-            iceberg.peakSize = peak;
-            iceberg.quantityTotalRemaining = quantity;
+            Order order = Order{id, OrderType::ICEBERG, Side::BUY, price, quantity, std::min(peak, quantity), IcebergData{peak, quantity}};
             addOrder(order);
         };
 
         void sellIceberg(OrderID id, Price price, Quantity quantity, Quantity peak) {
-            Order order = Order{id, OrderType::ICEBERG, Side::SELL, price, quantity, std::min(peak, quantity)};
-            auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
-            iceberg.peakSize = peak;
-            iceberg.quantityTotalRemaining = quantity;
+            Order order = Order{id, OrderType::ICEBERG, Side::SELL, price, quantity, std::min(peak, quantity), IcebergData{peak, quantity}};
+            addOrder(order);
+        };
+
+        void buyStopLoss(OrderID id, Price stopPrice, Quantity quantity) {
+            Order order = Order{id, OrderType::STOP_LOSS, Side::BUY, std::nullopt, quantity, quantity, StopLossData(stopPrice)};
+            addOrder(order);
+        };
+
+        void sellStopLoss(OrderID id, Price stopPrice, Quantity quantity) {
+            Order order = Order{id, OrderType::STOP_LOSS, Side::SELL, std::nullopt, quantity, quantity, StopLossData(stopPrice)};
             addOrder(order);
         };
 
