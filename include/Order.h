@@ -29,7 +29,7 @@ enum class Side{
 
 struct IcebergData{
     Quantity peakSize;
-    Quantity quantityTotal;
+    Quantity quantityTotalRemaining;
 };
 
 struct StopLossData{

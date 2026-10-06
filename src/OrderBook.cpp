@@ -20,10 +20,22 @@ void OrderBook::addOrder(Order& order){
     if (order.type == OrderType::LIMIT && !order.price) {
         throw std::invalid_argument("Limit order must have a price.");
     }
-
+    
     if (order.type == OrderType::MARKET && order.price) {
         throw std::invalid_argument("Market order cannot have a price.");
     }
+
+    if (order.type == OrderType::ICEBERG && !order.price) {
+        throw std::invalid_argument("Iceberg order must have a price.");
+    }
+
+    if (order.type == OrderType::ICEBERG) {
+        auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
+        if (!(iceberg.peak > 0)){
+            throw std::invalid_argument("Iceberg must have strictly positive peak.");
+        }
+    }
+    
     
 
     if (order.type == OrderType::LIMIT){
@@ -72,13 +84,13 @@ void OrderBook::addOrder(Order& order){
     }
 
     else if (order.type == OrderType::ICEBERG){
-        while (order.quantityRemaining > 0){
+        auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
+        while (iceberg.quantityTotalRemaining > 0){
             matchIcebergOrder(order, order.side == Side::BUY ? asks : bids);
-            auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
-            if(iceberg.quantityDisplayed > 0){
+            if(order.quantityRemaining > 0){
                 break;
             }
-            iceberg.quantityDisplayed = std::min(iceberg.peakSize, order.quantityRemaining);
+            order.quantityRemaining = std::min(iceberg.peakSize, iceberg.quantityTotalRemaining);
         }
         if (order.quantityRemaining > 0){
             auto& book = (order.side == Side::BUY ? bids : asks);

@@ -26,14 +26,7 @@ class OrderBook{
                     && (order.side == Side::BUY ? order.price.value() >= book.begin() -> first : order.price.value() <= book.begin() -> first)){
                 auto& orders = book.begin() -> second;
                 Order& firstOrder = orders.front();
-                Quantity amount_traded;
-                if (firstOrder.type == OrderType::ICEBERG){
-                    auto& iceberg = std::get<IcebergData>(firstOrder.typeSpecificData);
-                    amount_traded = std::min(iceberg.quantityDisplayed, order.quantityRemaining);
-                } 
-                else{
-                   amount_traded = std::min(firstOrder.quantityRemaining, order.quantityRemaining);
-                }
+                Quantity amount_traded = std::min(firstOrder.quantityRemaining, order.quantityRemaining);
                 TradeInfo trade {
                         OrderType::LIMIT,
                         order.side == Side::BUY ? order.id : firstOrder.id,
@@ -47,7 +40,11 @@ class OrderBook{
                 firstOrder.quantityRemaining -= amount_traded;
                 if (firstOrder.type == OrderType::ICEBERG){
                     auto& iceberg = std::get<IcebergData>(firstOrder.typeSpecificData);
-                    iceberg.quantityDisplayed -= amount_traded;
+                    iceberg.quantityTotalRemaining -= amount_traded;
+                    if (firstOrder.quantityRemaining == 0 && iceberg.quantityTotalRemaining > 0){
+                        firstOrder.quantityRemaining = std::min(iceberg.peakSize, iceberg.quantityTotalRemaining);
+                        orders.splice(orders.end(), orders, orders.begin());
+                    }
                 }                
 
                 if (firstOrder.quantityRemaining == 0){
@@ -55,13 +52,6 @@ class OrderBook{
                     orders.erase(orders.begin());
                     if (orders.empty()){
                         book.erase(book.begin());
-                    }
-                }
-                else if (firstOrder.type == OrderType::ICEBERG){
-                    auto& iceberg = std::get<IcebergData>(firstOrder.typeSpecificData);
-                    if (iceberg.quantityDisplayed == 0){
-                    iceberg.quantityDisplayed = std::min(firstOrder.quantityRemaining, iceberg.peakSize);
-                    orders.splice(orders.end(), orders, orders.begin());
                     }
                 }
             }
@@ -72,14 +62,7 @@ class OrderBook{
             while (!book.empty() && order.quantityRemaining > 0){
                 auto& orders = book.begin() -> second;
                 Order& bestAvailable = orders.front();
-                Quantity amount_traded;
-                if (bestAvailable.type == OrderType::ICEBERG){
-                    auto& iceberg = std::get<IcebergData>(bestAvailable.typeSpecificData);
-                    amount_traded = std::min(order.quantityRemaining, iceberg.quantityDisplayed);
-                }
-                else{
-                    amount_traded = std::min(order.quantityRemaining, bestAvailable.quantityRemaining);
-                }
+                Quantity amount_traded = std::min(order.quantityRemaining, bestAvailable.quantityRemaining);
                 TradeInfo trade {
                             OrderType::MARKET, 
                             order.side == Side::BUY ? order.id : bestAvailable.id,
@@ -91,6 +74,14 @@ class OrderBook{
                 tradeHistory.push_back(trade);
                 bestAvailable.quantityRemaining -= amount_traded;
                 order.quantityRemaining -= amount_traded;
+                if (bestAvailable.type == OrderType::ICEBERG){
+                    auto& iceberg = std::get<IcebergData>(bestAvailable.typeSpecificData);
+                    iceberg.quantityTotalRemaining -= amount_traded;
+                    if (bestAvailable.quantityRemaining == 0 && iceberg.quantityTotalRemaining > 0){
+                        bestAvailable.quantityRemaining = std::min(iceberg.quantityTotalRemaining, iceberg.peakSize);
+                        orders.splice(orders.end(), orders, orders.begin());
+                    }
+                }
                 if (bestAvailable.quantityRemaining == 0){
                     const auto bestAvailable_ID = bestAvailable.id;
                     orderLookup.erase(bestAvailable_ID);
@@ -99,25 +90,17 @@ class OrderBook{
                         book.erase(book.begin());
                     }
                 }
-                else if (bestAvailable.type == OrderType::ICEBERG){
-                    auto& iceberg = std::get<IcebergData>(bestAvailable.typeSpecificData);
-                    iceberg.quantityDisplayed -= amount_traded;
-                    if (iceberg.quantityDisplayed == 0){
-                        iceberg.quantityDisplayed = std::min(bestAvailable.quantityRemaining, iceberg.peakSize);
-                        orders.splice(orders.end(), orders, orders.begin());
-                    }
-                }
             }
         };
 
         template <typename Book>
         void matchIcebergOrder(Order& order, Book& book){
             auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
-            while (!book.empty() && iceberg.quantityDisplayed > 0
+            while (!book.empty() && order.quantityRemaining > 0
                     && (order.side == Side::BUY ? order.price.value() >= book.begin() -> first : order.price.value() <= book.begin() -> first)){
                 auto& orders = book.begin() -> second;
                 Order& bestOrder = orders.front();
-                Quantity amount_traded = std::min(iceberg.quantityDisplayed, bestOrder.quantityRemaining);
+                Quantity amount_traded = std::min(order.quantityRemaining, bestOrder.quantityRemaining);
                 TradeInfo trade {
                             OrderType::ICEBERG, 
                             order.side == Side::BUY ? order.id : bestOrder.id,
@@ -128,7 +111,7 @@ class OrderBook{
                 };
                 tradeHistory.push_back(trade);
                 order.quantityRemaining -= amount_traded;
-                iceberg.quantityDisplayed -= amount_traded;
+                iceberg.quantityTotalRemaining -= amount_traded;
                 bestOrder.quantityRemaining -= amount_traded;
                 if (bestOrder.quantityRemaining == 0){
                     orderLookup.erase(bestOrder.id);
@@ -144,12 +127,12 @@ class OrderBook{
         void buyLimit(OrderID id, Price price, Quantity quantity) {
             Order order = Order{id, OrderType::LIMIT, Side::BUY, price, quantity, quantity};
             addOrder(order);
-        }
+        };
 
         void sellLimit(OrderID id, Price price, Quantity quantity) {
             Order order = Order{id, OrderType::LIMIT, Side::SELL, price, quantity, quantity};
             addOrder(order);
-        }
+        };
 
         void buyMarket(OrderID id, Quantity quantity){
             Order order = Order{id, OrderType::MARKET, Side::BUY, std::nullopt, quantity, quantity};
@@ -157,6 +140,22 @@ class OrderBook{
         };
         void sellMarket(OrderID id, Quantity quantity){
             Order order = Order{id, OrderType::MARKET, Side::SELL, std::nullopt, quantity, quantity};
+            addOrder(order);
+        };
+
+        void buyIceberg(OrderID id, Price price, Quantity quantity, Quantity peak) {
+            Order order = Order{id, OrderType::ICEBERG, Side::BUY, price, quantity, std::min(peak, quantity)};
+            auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
+            iceberg.peakSize = peak;
+            iceberg.quantityTotalRemaining = quantity;
+            addOrder(order);
+        };
+
+        void sellIceberg(OrderID id, Price price, Quantity quantity, Quantity peak) {
+            Order order = Order{id, OrderType::ICEBERG, Side::SELL, price, quantity, std::min(peak, quantity)};
+            auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
+            iceberg.peakSize = peak;
+            iceberg.quantityTotalRemaining = quantity;
             addOrder(order);
         };
 
