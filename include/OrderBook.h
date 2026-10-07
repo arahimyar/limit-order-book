@@ -26,7 +26,8 @@ class OrderBook{
 
         template <typename Book>
         void matchLimitOrder(Order& order, Book& book){
-            std::optional<Price> lastTradePrice;
+            std::optional<Price> leastTradePrice;
+            std::optional<Price> greatestTradePrice;
             while (!book.empty() 
                     && order.quantityRemaining > 0 
                     && (order.side == Side::BUY ? order.price.value() >= book.begin() -> first : order.price.value() <= book.begin() -> first)){
@@ -41,7 +42,12 @@ class OrderBook{
                         amount_traded,
                         std::chrono::system_clock::now()
                     };
-                lastTradePrice = firstOrder.price.value();
+                if (!leastTradePrice || tradePrice < *leastTradePrice){
+                    leastTradePrice = tradePrice;
+                }
+                if (!greatestTradePrice || tradePrice > *greatestTradePrice){
+                    greatestTradePrice = tradePrice;
+                }
                 tradeHistory.push_back(trade);
                 order.quantityRemaining -= amount_traded;
                 firstOrder.quantityRemaining -= amount_traded;
@@ -63,9 +69,21 @@ class OrderBook{
                 }
             }
 
-        if (lastTradePrice.has_value()){
-            // Fill this out
-        }
+            while (greatestTradePrice.has_value() && !stopLoss_bids.empty() && greatestTradePrice >= stopLoss_bids.begin()->first){
+                for (auto& stopOrders : stopLoss_bids->second){
+                    pendingStopLoss_Buys.push(stopOrders);
+                }
+                stopLoss_bids.erase(stopLoss_bids.begin());
+            }
+            matchStopLossOrder(pendingStopLoss_Buys, asks, stopLoss_bids);
+
+            while (leastTradePrice.has_value() && !stopLoss_asks.empty() && leastTradePrice <= stopLoss_asks.begin()->first){
+                for (auto& stopOrders : stopLoss_asks->second){
+                    pendingStopLoss_Sells.push(std::move(stopOrders));
+                }
+                stopLoss_asks.erase(stopLoss_asks.begin());
+            }
+            matchStopLossOrder(pendingStopLoss_Sells, bids, stopLoss_asks);
         };
 
         template <typename Book>
