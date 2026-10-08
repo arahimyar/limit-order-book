@@ -12,7 +12,7 @@ TEST(OrderBookTest, MarketBuy_Single){
 
     const auto& trades = book.getTradeHistory();
     ASSERT_EQ(trades.size(), 1);
-    EXPECT_EQ(trades[0].type, OrderType::MARKET);
+    EXPECT_EQ(trades[0].aggressorType, OrderType::MARKET);
     EXPECT_EQ(trades[0].buyOrderID, 4);
     EXPECT_EQ(trades[0].sellOrderID, 1);
     EXPECT_EQ(trades[0].price, 2);
@@ -30,7 +30,7 @@ TEST(OrderBookTest, MarketSell_Single){
 
     const auto& trades = book.getTradeHistory();
     ASSERT_EQ(trades.size(), 1);
-    EXPECT_EQ(trades[0].type, OrderType::MARKET);
+    EXPECT_EQ(trades[0].aggressorType, OrderType::MARKET);
     EXPECT_EQ(trades[0].buyOrderID, 1);
     EXPECT_EQ(trades[0].sellOrderID, 4);
     EXPECT_EQ(trades[0].price, 2);
@@ -93,19 +93,19 @@ TEST(OrderBookTest, MarketBuy_Multiple){
     const auto& trade2 = trades[1];
     const auto& trade3 = trades[2];
 
-    EXPECT_EQ(trade1.type, OrderType::MARKET);
+    EXPECT_EQ(trade1.aggressorType, OrderType::MARKET);
     EXPECT_EQ(trade1.buyOrderID, 5);
     EXPECT_EQ(trade1.sellOrderID, 1);
     EXPECT_EQ(trade1.price, 100);
     EXPECT_EQ(trade1.quantity, 10);
     
-    EXPECT_EQ(trade2.type, OrderType::MARKET);
+    EXPECT_EQ(trade2.aggressorType, OrderType::MARKET);
     EXPECT_EQ(trade2.buyOrderID, 5);
     EXPECT_EQ(trade2.sellOrderID, 2);
     EXPECT_EQ(trade2.price, 100);
     EXPECT_EQ(trade2.quantity, 20);
 
-    EXPECT_EQ(trade3.type, OrderType::MARKET);
+    EXPECT_EQ(trade3.aggressorType, OrderType::MARKET);
     EXPECT_EQ(trade3.buyOrderID, 5);
     EXPECT_EQ(trade3.sellOrderID, 3);
     EXPECT_EQ(trade3.price, 101);
@@ -135,19 +135,19 @@ TEST(OrderBookTest, MarketSell_Multiple){
     auto trade2 = trades[1];
     auto trade3 = trades[2];
 
-    EXPECT_EQ(trade1.type, OrderType::MARKET);
+    EXPECT_EQ(trade1.aggressorType, OrderType::MARKET);
     EXPECT_EQ(trade1.buyOrderID, 1);
     EXPECT_EQ(trade1.sellOrderID, 5);
     EXPECT_EQ(trade1.price, 102);
     EXPECT_EQ(trade1.quantity, 10);
     
-    EXPECT_EQ(trade2.type, OrderType::MARKET);
+    EXPECT_EQ(trade2.aggressorType, OrderType::MARKET);
     EXPECT_EQ(trade2.buyOrderID, 2);
     EXPECT_EQ(trade2.sellOrderID, 5);
     EXPECT_EQ(trade2.price, 102);
     EXPECT_EQ(trade2.quantity, 20);
 
-    EXPECT_EQ(trade3.type, OrderType::MARKET);
+    EXPECT_EQ(trade3.aggressorType, OrderType::MARKET);
     EXPECT_EQ(trade3.buyOrderID, 3);
     EXPECT_EQ(trade3.sellOrderID, 5);
     EXPECT_EQ(trade3.price, 101);

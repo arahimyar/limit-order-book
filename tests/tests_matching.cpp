@@ -63,15 +63,15 @@ TEST(OrderBookTest, ExactMatch_Sell){
     ASSERT_EQ(trades.size(), 1);
 
     TradeInfo trade = trades[0];
-    EXPECT_EQ(trade.type, OrderType::LIMIT);
+    EXPECT_EQ(trade.aggressorType, OrderType::LIMIT);
     EXPECT_EQ(trade.buyOrderID, 1);
     EXPECT_EQ(trade.sellOrderID, 2);
     EXPECT_EQ(trade.price, 100);
     EXPECT_EQ(trade.quantity, 10);
 
-    EXPECT_THROW(book.getBestBid(), std::runtime_error);
-    EXPECT_THROW(book.getBestAsk(), std::runtime_error);
-    EXPECT_THROW(book.getSpread(), std::runtime_error);
+    EXPECT_FALSE(book.getBestBid().has_value());
+    EXPECT_FALSE(book.getBestAsk().has_value());
+    EXPECT_FALSE(book.getSpread().has_value());
 
     EXPECT_FALSE(book.getOrderInfo(1).has_value());
     EXPECT_FALSE(book.getOrderInfo(2).has_value());
@@ -91,15 +91,15 @@ TEST(OrderBookTest, ExactMatch_Buy){
     ASSERT_EQ(trades.size(), 1);
 
     TradeInfo trade = trades[0];
-    EXPECT_EQ(trade.type, OrderType::LIMIT);
+    EXPECT_EQ(trade.aggressorType, OrderType::LIMIT);
     EXPECT_EQ(trade.buyOrderID, 1);
     EXPECT_EQ(trade.sellOrderID, 2);
     EXPECT_EQ(trade.price, 100);
     EXPECT_EQ(trade.quantity, 10);
 
-    EXPECT_THROW(book.getBestBid(), std::runtime_error);
-    EXPECT_THROW(book.getBestAsk(), std::runtime_error);
-    EXPECT_THROW(book.getSpread(), std::runtime_error);
+    EXPECT_FALSE(book.getBestBid().has_value());
+    EXPECT_FALSE(book.getBestAsk().has_value());
+    EXPECT_FALSE(book.getSpread().has_value());
 
     EXPECT_FALSE(book.getOrderInfo(1).has_value());
     EXPECT_FALSE(book.getOrderInfo(2).has_value());
@@ -119,7 +119,7 @@ TEST(OrderBookTest, PartialMatch_SellSmaller){
     ASSERT_TRUE(asks.empty());
 
     const TradeInfo& trade = trades[0];
-    EXPECT_EQ(trade.type, OrderType::LIMIT);
+    EXPECT_EQ(trade.aggressorType, OrderType::LIMIT);
     EXPECT_EQ(trade.buyOrderID, 1);
     EXPECT_EQ(trade.sellOrderID, 2);
     EXPECT_EQ(trade.price, 100);
@@ -131,8 +131,8 @@ TEST(OrderBookTest, PartialMatch_SellSmaller){
     EXPECT_EQ(buyOrder -> quantityRemaining, 8);
     EXPECT_FALSE(book.getOrderInfo(2).has_value());
 
-    EXPECT_THROW(book.getBestAsk(), std::runtime_error);
-    EXPECT_THROW(book.getSpread(), std::runtime_error);
+    EXPECT_FALSE(book.getBestAsk().has_value());
+    EXPECT_FALSE(book.getSpread().has_value());
 
     EXPECT_EQ(book.getBestBid(), 100);
 };
@@ -151,7 +151,7 @@ TEST(OrderBookTest, PartialMatch_SellLarger){
     ASSERT_TRUE(bids.empty());
 
     const TradeInfo& trade = trades[0];
-    EXPECT_EQ(trade.type, OrderType::LIMIT);
+    EXPECT_EQ(trade.aggressorType, OrderType::LIMIT);
     EXPECT_EQ(trade.buyOrderID, 1);
     EXPECT_EQ(trade.sellOrderID, 2);
     EXPECT_EQ(trade.price, 100);
@@ -163,8 +163,8 @@ TEST(OrderBookTest, PartialMatch_SellLarger){
     EXPECT_EQ(sellOrder -> quantityRemaining, 8);
     EXPECT_FALSE(book.getOrderInfo(1).has_value());
 
-    EXPECT_THROW(book.getBestBid(), std::runtime_error);
-    EXPECT_THROW(book.getSpread(), std::runtime_error);
+    EXPECT_FALSE(book.getBestBid().has_value());
+    EXPECT_FALSE(book.getSpread().has_value());
 
     EXPECT_EQ(book.getBestAsk(), 100);
 };
@@ -183,7 +183,7 @@ TEST(OrderBookTest, PartialMatch_BuySmaller){
     ASSERT_TRUE(bids.empty());
 
     const TradeInfo& trade = trades[0];
-    EXPECT_EQ(trade.type, OrderType::LIMIT);
+    EXPECT_EQ(trade.aggressorType, OrderType::LIMIT);
     EXPECT_EQ(trade.buyOrderID, 2);
     EXPECT_EQ(trade.sellOrderID, 1);
     EXPECT_EQ(trade.price, 100);
@@ -195,8 +195,8 @@ TEST(OrderBookTest, PartialMatch_BuySmaller){
     EXPECT_EQ(sellOrder -> quantityRemaining, 8);
     EXPECT_FALSE(book.getOrderInfo(2).has_value());
 
-    EXPECT_THROW(book.getBestBid(), std::runtime_error);
-    EXPECT_THROW(book.getSpread(), std::runtime_error);
+    EXPECT_FALSE(book.getBestBid().has_value());
+    EXPECT_FALSE(book.getSpread().has_value());
 
     EXPECT_EQ(book.getBestAsk(), 100);
 };
@@ -215,7 +215,7 @@ TEST(OrderBookTest, PartialMatch_BuyLarger){
     ASSERT_TRUE(asks.empty());
 
     const TradeInfo& trade = trades[0];
-    EXPECT_EQ(trade.type, OrderType::LIMIT);
+    EXPECT_EQ(trade.aggressorType, OrderType::LIMIT);
     EXPECT_EQ(trade.buyOrderID, 2);
     EXPECT_EQ(trade.sellOrderID, 1);
     EXPECT_EQ(trade.price, 100);
@@ -227,8 +227,8 @@ TEST(OrderBookTest, PartialMatch_BuyLarger){
     EXPECT_EQ(buyOrder -> quantityRemaining, 8);
     EXPECT_FALSE(book.getOrderInfo(1).has_value());
 
-    EXPECT_THROW(book.getBestAsk(), std::runtime_error);
-    EXPECT_THROW(book.getSpread(), std::runtime_error);
+    EXPECT_FALSE(book.getBestAsk().has_value());
+    EXPECT_FALSE(book.getSpread().has_value());
 
     EXPECT_EQ(book.getBestBid(), 100);
 };
