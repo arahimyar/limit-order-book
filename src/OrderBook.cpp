@@ -31,7 +31,7 @@ void OrderBook::addOrder(Order& order){
 
     if (order.type == OrderType::ICEBERG) {
         auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
-        if (!(iceberg.peak > 0)){
+        if (!(iceberg.peakSize > 0)){
             throw std::invalid_argument("Iceberg must have strictly positive peak.");
         }
     }
@@ -54,6 +54,7 @@ void OrderBook::addOrder(Order& order){
                 auto& orders = priceLevelIter->second;
                 auto orderIter = orders.insert(orders.end(), order);
                 orderLookup[order.id] = OrderLocation{
+                    BookType::LIVE,
                     Side::BUY,
                     order.price.value(),
                     orderIter,
@@ -66,6 +67,7 @@ void OrderBook::addOrder(Order& order){
                 auto& orders = priceLevelIter->second;
                 auto orderIter = orders.insert(orders.end(), order);
                 orderLookup[order.id] = OrderLocation{
+                    BookType::LIVE,
                     Side::SELL,
                     order.price.value(),
                     orderIter,
@@ -93,16 +95,58 @@ void OrderBook::addOrder(Order& order){
             order.quantityRemaining = std::min(iceberg.peakSize, iceberg.quantityTotalRemaining);
         }
         if (order.quantityRemaining > 0){
-            auto& book = (order.side == Side::BUY ? bids : asks);
-            auto [priceLevelIter, ifPlaced] = book.try_emplace(order.price.value());
+            if (order.side == Side::BUY){
+            auto [priceLevelIter, ifPlaced] = bids.try_emplace(order.price.value());
             auto& orders = priceLevelIter->second;
             auto orderIter = orders.insert(orders.end(), order);
             orderLookup[order.id] = OrderLocation{
+                BookType::LIVE,
                 order.side,
                 order.price.value(),
                 orderIter,
                 priceLevelIter
-            };
+                };
+            }
+            else{
+            auto [priceLevelIter, ifPlaced] = asks.try_emplace(order.price.value());
+            auto& orders = priceLevelIter->second;
+            auto orderIter = orders.insert(orders.end(), order);
+            orderLookup[order.id] = OrderLocation{
+                BookType::LIVE,
+                order.side,
+                order.price.value(),
+                orderIter,
+                priceLevelIter
+                };
+            }
+        }
+    }
+
+    else if (order.type == OrderType::STOP_LOSS){
+        auto& stopLoss = std::get<StopLossData>(order.typeSpecificData);
+        if (order.side == Side::BUY){
+            auto [priceLevelIter, ifPlaced] = stopLoss_bids.try_emplace(stopLoss.stopPrice);
+            auto& orders = priceLevelIter->second;
+            auto orderIter = orders.insert(orders.end(), order);
+            orderLookup[order.id] = OrderLocation{
+                    BookType::STOP,
+                    order.side,
+                    stopLoss.stopPrice,
+                    orderIter,
+                    priceLevelIter
+                };
+        }
+        else{
+            auto [priceLevelIter, ifPlaced] = stopLoss_asks.try_emplace(stopLoss.stopPrice);
+            auto& orders = priceLevelIter->second;
+            auto orderIter = orders.insert(orders.end(), order);
+            orderLookup[order.id] = OrderLocation{
+                    BookType::STOP,
+                    order.side,
+                    stopLoss.stopPrice,
+                    orderIter,
+                    priceLevelIter
+                };
         }
     }
 
@@ -117,10 +161,22 @@ bool OrderBook::cancelOrder(OrderID orderID){
     location.priceLevelIter -> second.erase(location.orderIter);
     if (location.priceLevelIter -> second.empty()){
         if (location.side == Side::BUY){
-            bids.erase(location.priceLevelIter);
+            if(location.bookType == BookType::STOP){
+                stopLoss_bids.erase(location.priceLevelIter);
+            }
+            else{
+                bids.erase(location.priceLevelIter);
+            }
+
         }
         else{
-            asks.erase(location.priceLevelIter);
+            if(location.bookType == BookType::STOP){
+                stopLoss_asks.erase(location.priceLevelIter);
+            }
+            else{
+                asks.erase(location.priceLevelIter);
+            }
+
         }
     }
     orderLookup.erase(iter);
@@ -181,6 +237,31 @@ std::map<Price, PriceLevel> OrderBook::getCurrentAsks() const{
     }
     return asks_map;
 };
+
+std::map<Price, PriceLevel, std::greater<Price>> OrderBook::getCurrentStops_Asks() const{
+    std::map<Price, PriceLevel, std::greater<Price>> stopAsks_map;
+    for (const auto& [price, orders] : stopLoss_asks){
+        PriceLevel& level = stopAsks_map[price];
+        for (const auto& order : orders){
+            level.totalQuantity += order.quantityRemaining;
+            level.orderCount++;
+        }
+    }
+    return stopAsks_map;
+};
+std::map<Price, PriceLevel> OrderBook::getCurrentStops_Bids() const{
+    std::map<Price, PriceLevel> stopBids_map;
+    for (const auto& [price, orders] : stopLoss_bids){
+        PriceLevel& level = stopBids_map[price];
+        for (const auto& order : orders){
+            level.totalQuantity += order.quantityRemaining;
+            level.orderCount++;
+        }
+    }
+    return stopBids_map;
+};
+
+
 const std::vector<TradeInfo>& OrderBook::getTradeHistory()  const{
     return tradeHistory;
 };

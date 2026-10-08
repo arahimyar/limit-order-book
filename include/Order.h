@@ -13,8 +13,6 @@ using Quantity = std::uint32_t;
 using Time = std::chrono::system_clock::time_point;
 using OrderCount = std::uint32_t;
 
-
-
 enum class OrderType{
     LIMIT,
     MARKET,
@@ -27,6 +25,13 @@ enum class Side{
     SELL
 };
 
+enum class BookType{
+    LIVE,
+    STOP
+};
+
+// quantityTotalRemaining is the total number or orders
+// For iceberg orders the peak size takes the place of quantityRemaining in the Order struct
 struct IcebergData{
     Quantity peakSize;
     Quantity quantityTotalRemaining;
@@ -50,6 +55,7 @@ struct Order{
 // orderIter is used to locate order in the price level linked list
 // priceLevelIter is used to locate price level in std::map of prices
 struct OrderLocation{
+    BookType bookType;
     Side side;
     Price price;
     std::list<Order>::iterator orderIter;
@@ -57,7 +63,8 @@ struct OrderLocation{
 };
 
 struct TradeInfo {
-    OrderType type;
+    OrderType aggressorType;
+    OrderType restingType;
     OrderID buyOrderID;
     OrderID sellOrderID;
     Price price;

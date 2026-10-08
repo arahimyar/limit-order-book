@@ -35,18 +35,19 @@ class OrderBook{
                 Order& firstOrder = orders.front();
                 Quantity amount_traded = std::min(firstOrder.quantityRemaining, order.quantityRemaining);
                 TradeInfo trade {
-                        OrderType::LIMIT,
+                        order.type,
+                        firstOrder.type,
                         order.side == Side::BUY ? order.id : firstOrder.id,
                         order.side == Side::BUY ? firstOrder.id : order.id,
                         firstOrder.price.value(),
                         amount_traded,
                         std::chrono::system_clock::now()
                     };
-                if (!leastTradePrice || tradePrice < *leastTradePrice){
-                    leastTradePrice = tradePrice;
+                if (!leastTradePrice || trade.price < *leastTradePrice){
+                    leastTradePrice = trade.price;
                 }
-                if (!greatestTradePrice || tradePrice > *greatestTradePrice){
-                    greatestTradePrice = tradePrice;
+                if (!greatestTradePrice || trade.price > *greatestTradePrice){
+                    greatestTradePrice = trade.price;
                 }
                 tradeHistory.push_back(trade);
                 order.quantityRemaining -= amount_traded;
@@ -70,7 +71,7 @@ class OrderBook{
             }
 
             while (greatestTradePrice.has_value() && !stopLoss_bids.empty() && greatestTradePrice >= stopLoss_bids.begin()->first){
-                for (auto& stopOrders : stopLoss_bids->second){
+                for (auto& stopOrders : stopLoss_bids.begin()->second){
                     pendingStopLoss_Buys.push(stopOrders);
                 }
                 stopLoss_bids.erase(stopLoss_bids.begin());
@@ -78,7 +79,7 @@ class OrderBook{
             matchStopLossOrder(pendingStopLoss_Buys, asks, stopLoss_bids);
 
             while (leastTradePrice.has_value() && !stopLoss_asks.empty() && leastTradePrice <= stopLoss_asks.begin()->first){
-                for (auto& stopOrders : stopLoss_asks->second){
+                for (auto& stopOrders : stopLoss_asks.begin()->second){
                     pendingStopLoss_Sells.push(std::move(stopOrders));
                 }
                 stopLoss_asks.erase(stopLoss_asks.begin());
@@ -88,18 +89,27 @@ class OrderBook{
 
         template <typename Book>
         void matchMarketOrder(Order& order, Book& book){
+            std::optional<Price> leastTradePrice;
+            std::optional<Price> greatestTradePrice;
             while (!book.empty() && order.quantityRemaining > 0){
                 auto& orders = book.begin() -> second;
                 Order& bestAvailable = orders.front();
                 Quantity amount_traded = std::min(order.quantityRemaining, bestAvailable.quantityRemaining);
                 TradeInfo trade {
-                            OrderType::MARKET, 
+                            order.type,
+                            bestAvailable.type, 
                             order.side == Side::BUY ? order.id : bestAvailable.id,
                             order.side == Side::BUY ? bestAvailable.id : order.id,
                             bestAvailable.price.value(),
                             amount_traded,
                             std::chrono::system_clock::now()
                 };
+                if (!leastTradePrice || trade.price < *leastTradePrice){
+                    leastTradePrice = trade.price;
+                }
+                if (!greatestTradePrice || trade.price > *greatestTradePrice){
+                    greatestTradePrice = trade.price;
+                }
                 tradeHistory.push_back(trade);
                 bestAvailable.quantityRemaining -= amount_traded;
                 order.quantityRemaining -= amount_traded;
@@ -120,10 +130,28 @@ class OrderBook{
                     }
                 }
             }
+
+            while (greatestTradePrice.has_value() && !stopLoss_bids.empty() && greatestTradePrice >= stopLoss_bids.begin()->first){
+                for (auto& stopOrders : stopLoss_bids.begin()->second){
+                    pendingStopLoss_Buys.push(stopOrders);
+                }
+                stopLoss_bids.erase(stopLoss_bids.begin());
+            }
+            matchStopLossOrder(pendingStopLoss_Buys, asks, stopLoss_bids);
+
+            while (leastTradePrice.has_value() && !stopLoss_asks.empty() && leastTradePrice <= stopLoss_asks.begin()->first){
+                for (auto& stopOrders : stopLoss_asks.begin()->second){
+                    pendingStopLoss_Sells.push(std::move(stopOrders));
+                }
+                stopLoss_asks.erase(stopLoss_asks.begin());
+            }
+            matchStopLossOrder(pendingStopLoss_Sells, bids, stopLoss_asks);
         };
 
         template <typename Book>
         void matchIcebergOrder(Order& order, Book& book){
+            std::optional<Price> leastTradePrice;
+            std::optional<Price> greatestTradePrice;
             auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
             while (!book.empty() && order.quantityRemaining > 0
                     && (order.side == Side::BUY ? order.price.value() >= book.begin() -> first : order.price.value() <= book.begin() -> first)){
@@ -131,13 +159,20 @@ class OrderBook{
                 Order& bestOrder = orders.front();
                 Quantity amount_traded = std::min(order.quantityRemaining, bestOrder.quantityRemaining);
                 TradeInfo trade {
-                            OrderType::ICEBERG, 
+                            order.type,
+                            bestOrder.type, 
                             order.side == Side::BUY ? order.id : bestOrder.id,
                             order.side == Side::BUY ? bestOrder.id : order.id,
                             bestOrder.price.value(),
                             amount_traded,
                             std::chrono::system_clock::now()
                 };
+                if (!leastTradePrice || trade.price < *leastTradePrice){
+                    leastTradePrice = trade.price;
+                }
+                if (!greatestTradePrice || trade.price > *greatestTradePrice){
+                    greatestTradePrice = trade.price;
+                }
                 tradeHistory.push_back(trade);
                 order.quantityRemaining -= amount_traded;
                 iceberg.quantityTotalRemaining -= amount_traded;
@@ -150,6 +185,22 @@ class OrderBook{
                     }
                 }
             }
+
+            while (greatestTradePrice.has_value() && !stopLoss_bids.empty() && greatestTradePrice >= stopLoss_bids.begin()->first){
+                for (auto& stopOrders : stopLoss_bids.begin()->second){
+                    pendingStopLoss_Buys.push(stopOrders);
+                }
+                stopLoss_bids.erase(stopLoss_bids.begin());
+            }
+            matchStopLossOrder(pendingStopLoss_Buys, asks, stopLoss_bids);
+
+            while (leastTradePrice.has_value() && !stopLoss_asks.empty() && leastTradePrice <= stopLoss_asks.begin()->first){
+                for (auto& stopOrders : stopLoss_asks.begin()->second){
+                    pendingStopLoss_Sells.push(std::move(stopOrders));
+                }
+                stopLoss_asks.erase(stopLoss_asks.begin());
+            }
+            matchStopLossOrder(pendingStopLoss_Sells, bids, stopLoss_asks);
         };
 
         template <typename Queue, typename Book, typename StopBook>
@@ -164,7 +215,8 @@ class OrderBook{
                     Quantity amount_traded = std::min(order.quantityRemaining, bestAvailable.quantityRemaining);
                     Price price_traded = bestAvailable.price.value();
                     TradeInfo trade {
-                                OrderType::STOP_LOSS, 
+                                order.type,
+                                bestAvailable.type, 
                                 order.side == Side::BUY ? order.id : bestAvailable.id,
                                 order.side == Side::BUY ? bestAvailable.id : order.id,
                                 price_traded,
@@ -235,12 +287,12 @@ class OrderBook{
         };
 
         void buyStopLoss(OrderID id, Price stopPrice, Quantity quantity) {
-            Order order = Order{id, OrderType::STOP_LOSS, Side::BUY, std::nullopt, quantity, quantity, StopLossData(stopPrice)};
+            Order order = Order{id, OrderType::STOP_LOSS, Side::BUY, std::nullopt, quantity, quantity, StopLossData{stopPrice}};
             addOrder(order);
         };
 
         void sellStopLoss(OrderID id, Price stopPrice, Quantity quantity) {
-            Order order = Order{id, OrderType::STOP_LOSS, Side::SELL, std::nullopt, quantity, quantity, StopLossData(stopPrice)};
+            Order order = Order{id, OrderType::STOP_LOSS, Side::SELL, std::nullopt, quantity, quantity, StopLossData{stopPrice}};
             addOrder(order);
         };
 
@@ -253,6 +305,9 @@ class OrderBook{
         std::optional<Order> getOrderInfo(OrderID) const;
         std::map<Price, PriceLevel, std::greater<Price>> getCurrentBids() const;
         std::map<Price, PriceLevel> getCurrentAsks() const;
+        std::map<Price, PriceLevel, std::greater<Price>> getCurrentStops_Asks() const;
+        std::map<Price, PriceLevel> getCurrentStops_Bids() const;
+
         const std::vector<TradeInfo>& getTradeHistory()  const;
 };
 

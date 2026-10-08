@@ -128,12 +128,28 @@ void displayRecentTrades(const OrderBook& book, std::size_t N){
         const auto& trade = trades[trades.size() - 1 - i];
         auto time = std::chrono::system_clock::to_time_t(trade.time);
         std::cout << "Time: " << std::ctime(&time);
-        if (trade.type == OrderType::LIMIT){
-            std::cout << "Type: Limit Order \n";
+
+        if (trade.aggressorType == OrderType::LIMIT){
+            std::cout << "Aggressor Type: Limit Order \n";
         }
-        else{
-            std::cout << "Type: Market Order \n";
+        else if (trade.aggressorType == OrderType::MARKET){
+            std::cout << "Aggressor Type: Market Order \n";
         }
+        else if (trade.aggressorType == OrderType::ICEBERG){
+            std::cout << "Aggressor Type: Iceberg Order \n";
+        }
+        
+        else if (trade.aggressorType == OrderType::STOP_LOSS){
+            std::cout << "Aggressor Type: Stop Loss Order \n";
+        }
+
+        if (trade.restingType == OrderType::LIMIT){
+            std::cout << "Resting Type: Limit Order \n";
+        }
+        else if (trade.restingType == OrderType::ICEBERG){
+            std::cout << "Resting Type: Iceberg Order \n";
+        }
+
         std::cout << "Buyer ID: " << trade.buyOrderID << "\n";  
         std::cout << "Seller ID: " << trade.sellOrderID << "\n";    
         std::cout << "Quantity: " << trade.quantity << "\n";  
@@ -150,6 +166,8 @@ void displayBookStatus(const OrderBook& book) {
     std::cout << "\nCurrent best bid: " << (bestBid ? "$" + formatPrice(*bestBid) : "N/A") << "\n";
     std::cout << "Current best ask: " << (bestAsk ? "$" + formatPrice(*bestAsk) : "N/A") << "\n";
     std::cout << "Current spread: " << (spread  ? "$" + formatPrice(*spread)  : "N/A") << "\n";
+    std::cout << "Minimum buy stop: " << (!stopBids.empty() ? "$" + formatPrice(stopBids.begin()->first) : "N/A") << "\n";
+    std::cout << "Maximum sell stop: "<< (!stopAsks.empty() ? "$" + formatPrice(stopAsks.begin()->first) : "N/A") << "\n";
     std::cout << "\n";
 };
 
@@ -162,15 +180,42 @@ void displayOrderInfo(const OrderBook& book, OrderID ID){
     
     const Order& order = *orderOptional;
     std::cout << "\nOrder ID: " << order.id << "\n";
+
     if (order.side == Side::BUY){
         std::cout << "Side: Bid" << "\n";
     }
     else{
         std::cout << "Side: Ask" << "\n";
     }
-    std::cout << "Price: " << formatPrice(*order.price) << "\n";
-    std::cout << "Original Quantity: " << order.quantityOriginal << "\n";
-    std::cout << "Remaining Quantity: " << order.quantityRemaining << "\n";
-    std::cout << "Quantity Filled: " << order.quantityOriginal - order.quantityRemaining  << "\n";    
+
+    if (order.type == OrderType::LIMIT){
+        cout << "Order Type: Limit \n";
+        std::cout << "Price: " << formatPrice(*order.price) << "\n";
+        std::cout << "Original Quantity: " << order.quantityOriginal << "\n";
+        std::cout << "Remaining Quantity: " << order.quantityRemaining << "\n";
+        std::cout << "Quantity Filled: " << order.quantityOriginal - order.quantityRemaining  << "\n";  
+    }
+ 
+    else if (order.type == OrderType::ICEBERG){
+        auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
+         cout << "Order Type: Iceberg \n";
+        std::cout << "Price: " << formatPrice(*order.price) << "\n";
+        std::cout << "Original Quantity: " << order.quantityOriginal << "\n";
+        std::cout << "Peak Size: " << iceberg.peakSize << "\n";
+        std::cout << "Remaining Quantity Shown: " << order.quantityRemaining << "\n";
+        std::cout << "Total Remaining Quantity: " << iceberg.quantityTotalRemaining << "\n";
+    }
+
+    else if (order.type == OrderType::STOP_LOSS){
+        auto& stopLoss = std::get<StopLossData>(order.typeSpecificData);
+        cout << "Order Type: Stop Loss \n";
+        std::cout << "Stop Price: " << formatPrice(stopLoss.stopPrice) << "\n";
+        std::cout << "Quantity: " << order.quantityOriginal << "\n";
+    }
+
     std::cout << "\n";
+};
+
+void displayStops(const Orderbook& book, std::size_t N){
+    
 };
