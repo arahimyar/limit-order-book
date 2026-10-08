@@ -162,6 +162,8 @@ void displayBookStatus(const OrderBook& book) {
     const auto bestBid = book.getBestBid();
     const auto bestAsk = book.getBestAsk();
     const auto spread  = book.getSpread();
+    const auto stopBids = book.getCurrentStops_Bids();
+    const auto stopAsks = book.getCurrentStops_Asks();
 
     std::cout << "\nCurrent best bid: " << (bestBid ? "$" + formatPrice(*bestBid) : "N/A") << "\n";
     std::cout << "Current best ask: " << (bestAsk ? "$" + formatPrice(*bestAsk) : "N/A") << "\n";
@@ -189,7 +191,7 @@ void displayOrderInfo(const OrderBook& book, OrderID ID){
     }
 
     if (order.type == OrderType::LIMIT){
-        cout << "Order Type: Limit \n";
+        std::cout << "Order Type: Limit \n";
         std::cout << "Price: " << formatPrice(*order.price) << "\n";
         std::cout << "Original Quantity: " << order.quantityOriginal << "\n";
         std::cout << "Remaining Quantity: " << order.quantityRemaining << "\n";
@@ -198,7 +200,7 @@ void displayOrderInfo(const OrderBook& book, OrderID ID){
  
     else if (order.type == OrderType::ICEBERG){
         auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
-         cout << "Order Type: Iceberg \n";
+        std::cout << "Order Type: Iceberg \n";
         std::cout << "Price: " << formatPrice(*order.price) << "\n";
         std::cout << "Original Quantity: " << order.quantityOriginal << "\n";
         std::cout << "Peak Size: " << iceberg.peakSize << "\n";
@@ -208,7 +210,7 @@ void displayOrderInfo(const OrderBook& book, OrderID ID){
 
     else if (order.type == OrderType::STOP_LOSS){
         auto& stopLoss = std::get<StopLossData>(order.typeSpecificData);
-        cout << "Order Type: Stop Loss \n";
+        std::cout << "Order Type: Stop Loss \n";
         std::cout << "Stop Price: " << formatPrice(stopLoss.stopPrice) << "\n";
         std::cout << "Quantity: " << order.quantityOriginal << "\n";
     }
@@ -216,6 +218,6 @@ void displayOrderInfo(const OrderBook& book, OrderID ID){
     std::cout << "\n";
 };
 
-void displayStops(const Orderbook& book, std::size_t N){
-    
+void displayStops(const OrderBook& book, std::size_t N){
+
 };

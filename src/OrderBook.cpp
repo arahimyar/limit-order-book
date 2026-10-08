@@ -88,7 +88,13 @@ void OrderBook::addOrder(Order& order){
     else if (order.type == OrderType::ICEBERG){
         auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
         while (iceberg.quantityTotalRemaining > 0){
-            matchIcebergOrder(order, order.side == Side::BUY ? asks : bids);
+            if (order.side == Side::BUY){
+                matchIcebergOrder(order, asks);
+            }
+            else{
+                matchIcebergOrder(order, bids);
+            }
+            
             if(order.quantityRemaining > 0){
                 break;
             }
