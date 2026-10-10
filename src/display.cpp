@@ -184,15 +184,15 @@ void displayOrderInfo(const OrderBook& book, OrderID ID){
     std::cout << "\nOrder ID: " << order.id << "\n";
 
     if (order.side == Side::BUY){
-        std::cout << "Side: Bid" << "\n";
+        std::cout << "Side: Buy" << "\n";
     }
     else{
-        std::cout << "Side: Ask" << "\n";
+        std::cout << "Side: Sell" << "\n";
     }
 
     if (order.type == OrderType::LIMIT){
-        std::cout << "Order Type: Limit \n";
-        std::cout << "Price: " << formatPrice(*order.price) << "\n";
+        std::cout << "Type: Limit \n";
+        std::cout << "Price: $" << formatPrice(*order.price) << "\n";
         std::cout << "Original Quantity: " << order.quantityOriginal << "\n";
         std::cout << "Remaining Quantity: " << order.quantityRemaining << "\n";
         std::cout << "Quantity Filled: " << order.quantityOriginal - order.quantityRemaining  << "\n";  
@@ -200,8 +200,8 @@ void displayOrderInfo(const OrderBook& book, OrderID ID){
  
     else if (order.type == OrderType::ICEBERG){
         auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
-        std::cout << "Order Type: Iceberg \n";
-        std::cout << "Price: " << formatPrice(*order.price) << "\n";
+        std::cout << "Type: Iceberg \n";
+        std::cout << "Price: $" << formatPrice(*order.price) << "\n";
         std::cout << "Original Quantity: " << order.quantityOriginal << "\n";
         std::cout << "Peak Size: " << iceberg.peakSize << "\n";
         std::cout << "Remaining Quantity Shown: " << order.quantityRemaining << "\n";
@@ -210,14 +210,14 @@ void displayOrderInfo(const OrderBook& book, OrderID ID){
 
     else if (order.type == OrderType::STOP_LOSS){
         auto& stopLoss = std::get<StopLossData>(order.typeSpecificData);
-        std::cout << "Order Type: Stop Loss \n";
-        std::cout << "Stop Price: " << formatPrice(stopLoss.stopPrice) << "\n";
+        std::cout << "Type: Stop Loss \n";
+        std::cout << "Stop Price: $" << formatPrice(stopLoss.stopPrice) << "\n";
         std::cout << "Quantity: " << order.quantityOriginal << "\n";
     }
 
     std::cout << "\n";
 };
 
-void displayStops(const OrderBook& book, std::size_t N){
+void displayCurrentStops(const OrderBook& book, std::size_t N){
 
 };

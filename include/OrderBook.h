@@ -72,7 +72,7 @@ class OrderBook{
 
             while (greatestTradePrice.has_value() && !stopLoss_bids.empty() && greatestTradePrice >= stopLoss_bids.begin()->first){
                 for (auto& stopOrders : stopLoss_bids.begin()->second){
-                    pendingStopLoss_Buys.push(stopOrders);
+                    pendingStopLoss_Buys.push(std::move(stopOrders));
                 }
                 stopLoss_bids.erase(stopLoss_bids.begin());
             }
@@ -208,6 +208,7 @@ class OrderBook{
             while (!stop_queue.empty()){
                 Order order = std::move(stop_queue.front());
                 stop_queue.pop();
+                orderLookup.erase(order.id);
 
                 while (!book.empty() && order.quantityRemaining > 0){
                     auto& orders = book.begin() -> second;

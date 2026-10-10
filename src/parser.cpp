@@ -100,6 +100,63 @@ void buying(OrderBook& book, std::istringstream& input){
             std::cout << "Order rejected: " << e.what() << '\n';
         }
     }
+    
+    else if (type == "iceberg"){
+        std::string idString;
+        std::string priceString;
+        std::string quantityString;
+        std::string peakString;
+
+        if (!(input >> idString >> priceString >> quantityString >> peakString)) {
+            std::cout << "Input error. Command must be of the form: buy iceberg <id> <price> <quantity> <peak size>\n";
+            return;
+        }
+
+        if (priceString.find('.') != std::string::npos) {
+            std::cout << "Input error: price must be an integer number of cents.\n";
+            return;
+        }
+
+        try {
+            OrderID id = std::stoull(idString);
+            Price price = std::stoll(priceString);
+            Quantity quantity = std::stoull(quantityString);
+            Quantity peak = std::stoull(peakString);
+
+            book.buyIceberg(id, price, quantity, peak);
+        }
+        catch (const std::exception& e) {
+            std::cout << "Order rejected: " << e.what() << '\n';
+        }
+    }
+
+    else if (type == "stop_loss"){
+        std::string idString;
+        std::string stopPriceString;
+        std::string quantityString;
+
+        if (!(input >> idString >> stopPriceString >> quantityString)) {
+            std::cout << "Input error. Command must be of the form: buy stop_loss <id> <stop price> <quantity>\n";
+            return;
+        }
+
+        if (stopPriceString.find('.') != std::string::npos) {
+            std::cout << "Input error: price must be an integer number of cents.\n";
+            return;
+        }
+
+        try {
+            OrderID id = std::stoull(idString);
+            Price stopPrice = std::stoll(stopPriceString);
+            Quantity quantity = std::stoull(quantityString);
+
+            book.buyStopLoss(id, stopPrice, quantity);
+        }
+        catch (const std::exception& e) {
+            std::cout << "Order rejected: " << e.what() << '\n';
+        }
+    }
+    
     else {
         std::cout << "Unknown order type: " << type << '\n';
     }
@@ -154,6 +211,62 @@ void selling(OrderBook& book, std::istringstream& input){
             std::cout << "Order rejected: " << e.what() << '\n';
         }
     }
+        else if (type == "iceberg"){
+        std::string idString;
+        std::string priceString;
+        std::string quantityString;
+        std::string peakString;
+
+        if (!(input >> idString >> priceString >> quantityString >> peakString)) {
+            std::cout << "Input error. Command must be of the form: buy iceberg <id> <price> <quantity> <peak size>\n";
+            return;
+        }
+
+        if (priceString.find('.') != std::string::npos) {
+            std::cout << "Input error: price must be an integer number of cents.\n";
+            return;
+        }
+
+        try {
+            OrderID id = std::stoull(idString);
+            Price price = std::stoll(priceString);
+            Quantity quantity = std::stoull(quantityString);
+            Quantity peak = std::stoull(peakString);
+
+            book.sellIceberg(id, price, quantity, peak);
+        }
+        catch (const std::exception& e) {
+            std::cout << "Order rejected: " << e.what() << '\n';
+        }
+    }
+
+    else if (type == "stop_loss"){
+        std::string idString;
+        std::string stopPriceString;
+        std::string quantityString;
+
+        if (!(input >> idString >> stopPriceString >> quantityString)) {
+            std::cout << "Input error. Command must be of the form: buy stop_loss <id> <stop price> <quantity>\n";
+            return;
+        }
+
+        if (stopPriceString.find('.') != std::string::npos) {
+            std::cout << "Input error: price must be an integer number of cents.\n";
+            return;
+        }
+
+        try {
+            OrderID id = std::stoull(idString);
+            Price stopPrice = std::stoll(stopPriceString);
+            Quantity quantity = std::stoull(quantityString);
+
+            book.sellStopLoss(id, stopPrice, quantity);
+        }
+        catch (const std::exception& e) {
+            std::cout << "Order rejected: " << e.what() << '\n';
+        }
+    }
+    
     else {
         std::cout << "Unknown order type: " << type << '\n';
     }
@@ -182,6 +295,12 @@ void displaying(OrderBook& book, std::istringstream& input){
         input >> N;
 
         displayCurrentBook(book, N);
+    }
+    else if (type == "stops"){
+        std::size_t N = 10;
+        input >> N;
+
+        displayCurrentStops(book, N);
     }
     else if (type == "trades") {
         std::size_t N = 5;
@@ -236,12 +355,17 @@ void runOrderBook(OrderBook& book){
                 << "\nCommands:\n"
                 << "  buy limit <id> <price> <quantity>\n"
                 << "  buy market <id> <quantity>\n"
+                << "  buy iceberg <id> <price> <quantity> <peak>\n"
+                << "  buy stop_loss <id> <stop price> <quantity>\n"
                 << "  sell limit <id> <price> <quantity>\n"
                 << "  sell market <id> <quantity>\n"
+                << "  sell iceberg <id> <price> <quantity> <peak>\n"
+                << "  sell stop_loss <id> <stop price> <quantity>\n"
                 << "  cancel <id>\n"
                 << "  load <file name>\n"
                 << "  display book [N]\n"
                 << "  display trades [N]\n"
+                << "  display stops [N]\n"
                 << "  display status\n"
                 << "  display order <id>\n"
                 << "  help\n"
@@ -251,9 +375,9 @@ void runOrderBook(OrderBook& book){
         else if (command == "quit") {
             break;
         }
-        else if (command.empty()) {
-            return;
-        }
+        // else if (command.empty()) {
+        //     return;
+        // }
         else {
             std::cout << "Unknown command: " << command << '\n';
         }
