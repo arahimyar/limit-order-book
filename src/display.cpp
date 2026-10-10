@@ -219,5 +219,75 @@ void displayOrderInfo(const OrderBook& book, OrderID ID){
 };
 
 void displayCurrentStops(const OrderBook& book, std::size_t N){
+    constexpr const char* RED = "\033[31m";
+    constexpr const char* GREEN = "\033[32m";
+    constexpr const char* STANDARD = "\033[0m";
 
+    if (N == 0){
+        return;
+    }
+    
+    std::uint32_t bid_ask_width = 25;
+    int price_padding = 3;
+
+    const auto& bids = book.getCurrentStops_Bids();
+    const auto& asks = book.getCurrentStops_Asks();
+
+    Price max_price;
+    if (asks.empty() && bids.empty()){
+        std::cout << "No stops in order book.\n";
+        return;
+    }
+    else if(bids.empty()){
+        max_price = asks.begin() -> first;
+    }
+    else{
+        max_price = bids.begin() -> first;
+        auto bids_iter = bids.begin();
+        for(std::size_t i = 0; i < N && bids_iter != bids.end(); i++, bids_iter++){
+            max_price = bids_iter -> first;
+        }
+    }
+    std::string price_string = formatPrice(max_price);
+    int price_width = price_string.length() + 2*price_padding;
+
+
+    std::uint32_t max_quantity = 0;
+    auto asks_iter = asks.begin();
+    for(std::size_t i = 0; i < N && asks_iter != asks.end(); i++, asks_iter++){
+            max_quantity = std::max(max_quantity, asks_iter -> second.totalQuantity);
+    }
+    auto bids_iter = bids.begin();
+    for(std::size_t i = 0; i < N && bids_iter != bids.end(); i++, bids_iter++){
+            max_quantity = std::max(max_quantity, bids_iter -> second.totalQuantity);
+    }
+
+    std::uint32_t block_value = std::max<std::uint32_t>(1, max_quantity/bid_ask_width);
+    std::cout << "\n";
+    std::cout << center("ASK VOLUME", bid_ask_width) << center("PRICE", price_width) << center("BID VOLUME", bid_ask_width) << "\n";
+
+    std::vector<decltype(asks.begin())> recent_asks;
+    asks_iter = asks.begin();
+    for(std::size_t i = 0; i < N && asks_iter != asks.end(); i++, asks_iter++){
+        recent_asks.push_back(asks_iter);
+    }
+
+    for (auto it = recent_asks.rbegin(); it != recent_asks.rend(); it++) {
+        const auto& iter = *it;
+        std::cout << center(std::to_string(iter -> second.totalQuantity), bid_ask_width);
+        std::cout << RED << center(formatPrice(iter -> first), price_width) << STANDARD;
+        std::cout << std::string(bid_ask_width, ' ') << '\n';
+    }
+
+    std::size_t count = 0;
+    for (const auto& [price, level] : bids){
+        if (count++ >= N){
+            break;
+        }
+
+
+        std::cout << std::string(bid_ask_width, ' ');
+        std::cout << GREEN << center(formatPrice(price), price_width) << STANDARD;
+        std::cout << center(std::to_string(level.totalQuantity), bid_ask_width) << "\n";
+    }
 };
