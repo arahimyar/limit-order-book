@@ -31,7 +31,9 @@ add_executable(OrderBookTests
     tests/tests_market.cpp
     tests/tests_matching.cpp
     tests/tests_validation.cpp
-)
+    tests/tests_iceberg.cpp
+    tests/tests_stoploss.cpp
+    )
 target_link_libraries(OrderBookTests PRIVATE OrderBookLib GTest::gtest_main)
 
 target_compile_options(OrderBookTests PRIVATE
