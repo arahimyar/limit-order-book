@@ -12,8 +12,10 @@ TEST(OrderBookTest, AddBuyIcebergOrder_Single){
     EXPECT_EQ(order->price, 10);
     EXPECT_EQ(order->quantityOriginal, 100);
     EXPECT_EQ(order->quantityRemaining, 20);
+    
     const auto& iceberg = std::get<IcebergData>(order->typeSpecificData);
     EXPECT_EQ(iceberg.quantityTotalRemaining, 100);
+    EXPECT_EQ(iceberg.peakSize, 20);
     EXPECT_EQ(book.getBestBid(), 10);
 };
 
@@ -28,8 +30,10 @@ TEST(OrderBookTest, AddSellIcebergOrder_Single){
     EXPECT_EQ(order->price, 10);
     EXPECT_EQ(order->quantityOriginal, 100);
     EXPECT_EQ(order->quantityRemaining, 20);
+    
     const auto& iceberg = std::get<IcebergData>(order->typeSpecificData);
     EXPECT_EQ(iceberg.quantityTotalRemaining, 100);
+    EXPECT_EQ(iceberg.peakSize, 20);
     EXPECT_EQ(book.getBestAsk(), 10);
 };
 

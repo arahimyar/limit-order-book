@@ -187,7 +187,7 @@ TEST(OrderBookTest, MarketBuyEmpty){
     EXPECT_TRUE(trades.empty());
     EXPECT_TRUE(book.getCurrentAsks().empty());
     EXPECT_TRUE(book.getCurrentBids().empty());
-}
+};
 
 TEST(OrderBookTest, MarketSellEmpty){
     OrderBook book;
@@ -196,4 +196,4 @@ TEST(OrderBookTest, MarketSellEmpty){
     EXPECT_TRUE(trades.empty());
     EXPECT_TRUE(book.getCurrentAsks().empty());
     EXPECT_TRUE(book.getCurrentBids().empty());
-}
+};
