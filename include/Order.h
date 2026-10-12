@@ -81,7 +81,7 @@ struct PriceLevel{
 
 struct MatchResult{
     std::optional<Price> lowestTradePrice;
-    std::optional<Price> highestTradePrice;
+    std::optional<Price> greatestTradePrice;
     bool tradeOccurred() const{
         return lowestTradePrice.has_value();
     };

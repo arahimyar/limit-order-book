@@ -39,14 +39,14 @@ void OrderBook::addOrder(Order& order){
     
 
     if (order.type == OrderType::LIMIT){
+        MatchResult res;
         if (order.side == Side::BUY){
-            matchLimitOrder(order, asks);
+            res = matchLimitOrder(order, asks);
         }
 
         else if (order.side == Side::SELL){
-            matchLimitOrder(order, bids);
+            res = matchLimitOrder(order, bids);
         }
-        
         
         if (order.quantityRemaining > 0) {
             if (order.side == Side::BUY) {
@@ -74,25 +74,33 @@ void OrderBook::addOrder(Order& order){
                     priceLevelIter
                 };
             }
-                }
+        }
+        if (res.tradeOccurred()){
+            stopLossTrigger(*res.lowestTradePrice, *res.greatestTradePrice);
+        }
     }
     else if (order.type == OrderType::MARKET) {
+        MatchResult res;
         if (order.side == Side::BUY) {
-            matchMarketOrder(order, asks);
+            res = matchMarketOrder(order, asks);
         } 
         else {
-            matchMarketOrder(order, bids);
+            res = matchMarketOrder(order, bids);
+        }
+        if (res.tradeOccurred()){
+            stopLossTrigger(*res.lowestTradePrice, *res.greatestTradePrice);
         }
     }
 
     else if (order.type == OrderType::ICEBERG){
+        MatchResult res;
         auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
         while (iceberg.quantityTotalRemaining > 0){
             if (order.side == Side::BUY){
-                matchIcebergOrder(order, asks);
+                res = matchIcebergOrder(order, asks);
             }
             else{
-                matchIcebergOrder(order, bids);
+                res = matchIcebergOrder(order, bids);
             }
             
             if(order.quantityRemaining > 0){
@@ -125,6 +133,9 @@ void OrderBook::addOrder(Order& order){
                 priceLevelIter
                 };
             }
+        }
+        if (res.tradeOccurred()){
+            stopLossTrigger(*res.lowestTradePrice, *res.greatestTradePrice);
         }
     }
 
@@ -188,6 +199,24 @@ bool OrderBook::cancelOrder(OrderID orderID){
     orderLookup.erase(iter);
     return true;
 };
+
+void OrderBook::stopLossTrigger(Price leastTradePrice, Price greatestTradePrice){
+    while (!stopLoss_bids.empty() && greatestTradePrice >= stopLoss_bids.begin()->first){
+        for (auto& stopOrders : stopLoss_bids.begin()->second){
+            pendingStopLoss_Buys.push(std::move(stopOrders));
+        }
+        stopLoss_bids.erase(stopLoss_bids.begin());
+    }
+    matchStopLossOrder(pendingStopLoss_Buys, asks, stopLoss_bids);
+
+    while (!stopLoss_asks.empty() && leastTradePrice <= stopLoss_asks.begin()->first){
+        for (auto& stopOrders : stopLoss_asks.begin()->second){
+            pendingStopLoss_Sells.push(std::move(stopOrders));
+        }
+        stopLoss_asks.erase(stopLoss_asks.begin());
+    }
+    matchStopLossOrder(pendingStopLoss_Sells, bids, stopLoss_asks);
+}
 
 std::optional<Price> OrderBook::getSpread() const {
     if (bids.empty() || asks.empty()){

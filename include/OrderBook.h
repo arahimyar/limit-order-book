@@ -25,9 +25,10 @@ class OrderBook{
         std::queue<Order> pendingStopLoss_Sells;
 
         void addOrder(Order& order);
+        void stopLossTrigger(Price lowestTradePrice, Price greatestTradePrice);
 
         template <typename Book>
-        void matchLimitOrder(Order& order, Book& book){
+        MatchResult matchLimitOrder(Order& order, Book& book){
             std::optional<Price> leastTradePrice;
             std::optional<Price> greatestTradePrice;
             while (!book.empty() 
@@ -72,25 +73,11 @@ class OrderBook{
                 }
             }
 
-            while (greatestTradePrice.has_value() && !stopLoss_bids.empty() && greatestTradePrice >= stopLoss_bids.begin()->first){
-                for (auto& stopOrders : stopLoss_bids.begin()->second){
-                    pendingStopLoss_Buys.push(std::move(stopOrders));
-                }
-                stopLoss_bids.erase(stopLoss_bids.begin());
-            }
-            matchStopLossOrder(pendingStopLoss_Buys, asks, stopLoss_bids);
-
-            while (leastTradePrice.has_value() && !stopLoss_asks.empty() && leastTradePrice <= stopLoss_asks.begin()->first){
-                for (auto& stopOrders : stopLoss_asks.begin()->second){
-                    pendingStopLoss_Sells.push(std::move(stopOrders));
-                }
-                stopLoss_asks.erase(stopLoss_asks.begin());
-            }
-            matchStopLossOrder(pendingStopLoss_Sells, bids, stopLoss_asks);
+            return MatchResult{leastTradePrice, greatestTradePrice};
         };
 
         template <typename Book>
-        void matchMarketOrder(Order& order, Book& book){
+        MatchResult matchMarketOrder(Order& order, Book& book){
             std::optional<Price> leastTradePrice;
             std::optional<Price> greatestTradePrice;
             while (!book.empty() && order.quantityRemaining > 0){
@@ -132,26 +119,11 @@ class OrderBook{
                     }
                 }
             }
-
-            while (greatestTradePrice.has_value() && !stopLoss_bids.empty() && greatestTradePrice >= stopLoss_bids.begin()->first){
-                for (auto& stopOrders : stopLoss_bids.begin()->second){
-                    pendingStopLoss_Buys.push(stopOrders);
-                }
-                stopLoss_bids.erase(stopLoss_bids.begin());
-            }
-            matchStopLossOrder(pendingStopLoss_Buys, asks, stopLoss_bids);
-
-            while (leastTradePrice.has_value() && !stopLoss_asks.empty() && leastTradePrice <= stopLoss_asks.begin()->first){
-                for (auto& stopOrders : stopLoss_asks.begin()->second){
-                    pendingStopLoss_Sells.push(std::move(stopOrders));
-                }
-                stopLoss_asks.erase(stopLoss_asks.begin());
-            }
-            matchStopLossOrder(pendingStopLoss_Sells, bids, stopLoss_asks);
+            return MatchResult{leastTradePrice, greatestTradePrice};
         };
 
         template <typename Book>
-        void matchIcebergOrder(Order& order, Book& book){
+        MatchResult matchIcebergOrder(Order& order, Book& book){
             std::optional<Price> leastTradePrice;
             std::optional<Price> greatestTradePrice;
 
@@ -188,22 +160,7 @@ class OrderBook{
                     }
                 }
             }
-
-            while (greatestTradePrice.has_value() && !stopLoss_bids.empty() && greatestTradePrice >= stopLoss_bids.begin()->first){
-                for (auto& stopOrders : stopLoss_bids.begin()->second){
-                    pendingStopLoss_Buys.push(stopOrders);
-                }
-                stopLoss_bids.erase(stopLoss_bids.begin());
-            }
-            matchStopLossOrder(pendingStopLoss_Buys, asks, stopLoss_bids);
-
-            while (leastTradePrice.has_value() && !stopLoss_asks.empty() && leastTradePrice <= stopLoss_asks.begin()->first){
-                for (auto& stopOrders : stopLoss_asks.begin()->second){
-                    pendingStopLoss_Sells.push(std::move(stopOrders));
-                }
-                stopLoss_asks.erase(stopLoss_asks.begin());
-            }
-            matchStopLossOrder(pendingStopLoss_Sells, bids, stopLoss_asks);
+            return MatchResult{leastTradePrice, greatestTradePrice};
         };
 
         template <typename Queue, typename Book, typename StopBook>
