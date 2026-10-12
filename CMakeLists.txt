@@ -29,7 +29,9 @@ enable_testing()
 add_executable(OrderBookTests 
     tests/tests_limit.cpp
     tests/tests_market.cpp
-    tests/tests_matching.cpp
+    tests/tests_limitmarket_matching.cpp
+    tests/tests_iceberg_matching.cpp
+    tests/tests_stoploss_matching.cpp
     tests/tests_validation.cpp
     tests/tests_iceberg.cpp
     tests/tests_stoploss.cpp
