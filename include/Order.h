@@ -78,3 +78,11 @@ struct PriceLevel{
     Quantity totalQuantity = 0;
     OrderCount orderCount = 0;
 };
+
+struct MatchResult{
+    std::optional<Price> lowestTradePrice;
+    std::optional<Price> highestTradePrice;
+    bool tradeOccurred() const{
+        return lowestTradePrice.has_value();
+    };
+};

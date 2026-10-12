@@ -9,6 +9,8 @@
 #include <optional>
 #include <queue>
 
+#include <iostream>
+
 #include "Order.h"
 
 class OrderBook{
@@ -152,6 +154,7 @@ class OrderBook{
         void matchIcebergOrder(Order& order, Book& book){
             std::optional<Price> leastTradePrice;
             std::optional<Price> greatestTradePrice;
+
             auto& iceberg = std::get<IcebergData>(order.typeSpecificData);
             while (!book.empty() && order.quantityRemaining > 0
                     && (order.side == Side::BUY ? order.price.value() >= book.begin() -> first : order.price.value() <= book.begin() -> first)){
