@@ -49,10 +49,14 @@ include(GoogleTest)
 gtest_discover_tests(OrderBookTests)
 
 add_executable(OrderBookBenchmarks
-    benchmarks/benchmark_insertion.cpp
-    benchmarks/benchmark_cancelation.cpp
+    benchmarks/benchmark_limitInsertion.cpp
+    benchmarks/benchmark_icebergInsertion.cpp
+    benchmarks/benchmark_stopLossInsertion.cpp
+    benchmarks/benchmark_cancellation.cpp
     benchmarks/benchmark_limitMatching.cpp
     benchmarks/benchmark_marketMatching.cpp
+    benchmarks/benchmark_icebergMatching.cpp
+    benchmarks/benchmark_stopLossMatching.cpp
     benchmarks/benchmark_realistic.cpp
 )
 

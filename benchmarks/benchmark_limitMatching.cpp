@@ -18,24 +18,26 @@ static void BM_LimitMatching(benchmark::State& state){
         OrderBook book;
         for (int i  = 0; i < N; i++){
             if (i % 2 == 0){
-                book.buyLimit(i, buyPrices[i % MOD], 10);
+                book.buyLimit(i, buyPrices[i % MOD], 100);
             }
             else{
-                book.sellLimit(i, sellPrices[i % MOD], 10);
+                book.sellLimit(i, sellPrices[i % MOD], 100);
             }
         }
         state.ResumeTiming();
         for (int i = 0; i < N; i++){
             if (i%2 == 0){
-                book.sellLimit(N+i, 100 - MOD - 1, 10);
+                book.sellLimit(N+i, 100 - MOD - 1, 100);
             }
             else{
-                book.buyLimit(N+i, 100+2*MOD, 10);
+                book.buyLimit(N+i, 100+2*MOD, 100);
             }
         }
         benchmark::DoNotOptimize(book);
+        state.PauseTiming();
     }
     state.SetItemsProcessed(state.iterations() * N);
+    state.SetComplexityN(N);
 };
 
-BENCHMARK(BM_LimitMatching)->RangeMultiplier(10)->Range(100, 1000000);
+BENCHMARK(BM_LimitMatching)->RangeMultiplier(10)->Range(100, 1000000)->Complexity();
