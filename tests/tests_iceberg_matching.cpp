@@ -248,3 +248,46 @@ TEST(OrderBookTest, Iceberg_TotalDepletion_Sell){
     EXPECT_FALSE(book.getOrderInfo(1).has_value());
     EXPECT_FALSE(book.getOrderInfo(2).has_value());
 };
+
+TEST(OrderBookTest, IcebergIcebergMatching){
+    OrderBook book;
+    book.sellIceberg(1, 100, 10, 3);
+    book.buyIceberg(2, 100, 4, 2);
+
+    const auto& trades = book.getTradeHistory();
+    ASSERT_EQ(trades.size(), 3);
+
+    TradeInfo trade = trades[0];
+    EXPECT_EQ(trade.aggressorType, OrderType::ICEBERG);
+    EXPECT_EQ(trade.restingType, OrderType::ICEBERG);
+    EXPECT_EQ(trade.buyOrderID, 2);
+    EXPECT_EQ(trade.sellOrderID, 1);
+    EXPECT_EQ(trade.price, 100);
+    EXPECT_EQ(trade.quantity, 2);
+
+    trade = trades[1];
+    EXPECT_EQ(trade.aggressorType, OrderType::ICEBERG);
+    EXPECT_EQ(trade.restingType, OrderType::ICEBERG);
+    EXPECT_EQ(trade.buyOrderID, 2);
+    EXPECT_EQ(trade.sellOrderID, 1);
+    EXPECT_EQ(trade.price, 100);
+    EXPECT_EQ(trade.quantity, 1);
+
+    trade = trades[2];
+    EXPECT_EQ(trade.aggressorType, OrderType::ICEBERG);
+    EXPECT_EQ(trade.restingType, OrderType::ICEBERG);
+    EXPECT_EQ(trade.buyOrderID, 2);
+    EXPECT_EQ(trade.sellOrderID, 1);
+    EXPECT_EQ(trade.price, 100);
+    EXPECT_EQ(trade.quantity, 1);
+
+    EXPECT_FALSE(book.getOrderInfo(2).has_value());
+
+    auto order = book.getOrderInfo(1);
+    EXPECT_EQ(order->id, 1);
+    EXPECT_EQ(*order->price, 100);
+    EXPECT_EQ(order->quantityOriginal, 10);
+    EXPECT_EQ(order->quantityRemaining, 2);
+    const auto& iceberg = std::get<IcebergData>(order->typeSpecificData);
+    EXPECT_EQ(iceberg.quantityTotalRemaining, 6);    
+}

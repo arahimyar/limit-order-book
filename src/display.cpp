@@ -130,24 +130,24 @@ void displayRecentTrades(const OrderBook& book, std::size_t N){
         std::cout << "Time: " << std::ctime(&time);
 
         if (trade.aggressorType == OrderType::LIMIT){
-            std::cout << "Aggressor Type: Limit Order \n";
+            std::cout << "Aggressor Type: Limit \n";
         }
         else if (trade.aggressorType == OrderType::MARKET){
-            std::cout << "Aggressor Type: Market Order \n";
+            std::cout << "Aggressor Type: Market \n";
         }
         else if (trade.aggressorType == OrderType::ICEBERG){
-            std::cout << "Aggressor Type: Iceberg Order \n";
+            std::cout << "Aggressor Type: Iceberg \n";
         }
         
         else if (trade.aggressorType == OrderType::STOP_LOSS){
-            std::cout << "Aggressor Type: Stop Loss Order \n";
+            std::cout << "Aggressor Type: Stop Loss \n";
         }
 
         if (trade.restingType == OrderType::LIMIT){
-            std::cout << "Resting Type: Limit Order \n";
+            std::cout << "Resting Type: Limit \n";
         }
         else if (trade.restingType == OrderType::ICEBERG){
-            std::cout << "Resting Type: Iceberg Order \n";
+            std::cout << "Resting Type: Iceberg \n";
         }
 
         std::cout << "Buyer ID: " << trade.buyOrderID << "\n";  
@@ -164,12 +164,14 @@ void displayBookStatus(const OrderBook& book) {
     const auto spread  = book.getSpread();
     const auto stopBids = book.getCurrentStops_Bids();
     const auto stopAsks = book.getCurrentStops_Asks();
+    const auto& trades = book.getTradeHistory();
 
     std::cout << "\nCurrent best bid: " << (bestBid ? "$" + formatPrice(*bestBid) : "N/A") << "\n";
     std::cout << "Current best ask: " << (bestAsk ? "$" + formatPrice(*bestAsk) : "N/A") << "\n";
     std::cout << "Current spread: " << (spread  ? "$" + formatPrice(*spread)  : "N/A") << "\n";
     std::cout << "Minimum buy stop: " << (!stopBids.empty() ? "$" + formatPrice(stopBids.begin()->first) : "N/A") << "\n";
     std::cout << "Maximum sell stop: "<< (!stopAsks.empty() ? "$" + formatPrice(stopAsks.begin()->first) : "N/A") << "\n";
+    std::cout << "Number of trades executed: " <<  trades.size() << "\n";
     std::cout << "\n";
 };
 
