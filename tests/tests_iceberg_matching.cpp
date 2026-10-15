@@ -290,4 +290,4 @@ TEST(OrderBookTest, IcebergIcebergMatching){
     EXPECT_EQ(order->quantityRemaining, 2);
     const auto& iceberg = std::get<IcebergData>(order->typeSpecificData);
     EXPECT_EQ(iceberg.quantityTotalRemaining, 6);    
-}
+};
