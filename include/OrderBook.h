@@ -152,6 +152,14 @@ class OrderBook{
                 order.quantityRemaining -= amount_traded;
                 iceberg.quantityTotalRemaining -= amount_traded;
                 bestOrder.quantityRemaining -= amount_traded;
+                if (bestOrder.type == OrderType::ICEBERG){
+                    auto& iceberg = std::get<IcebergData>(bestOrder.typeSpecificData);
+                    iceberg.quantityTotalRemaining -= amount_traded;
+                    if (bestOrder.quantityRemaining == 0 && iceberg.quantityTotalRemaining > 0){
+                        bestOrder.quantityRemaining = std::min(iceberg.quantityTotalRemaining, iceberg.peakSize);
+                        orders.splice(orders.end(), orders, orders.begin());
+                    }
+                }
                 if (bestOrder.quantityRemaining == 0){
                     orderLookup.erase(bestOrder.id);
                     orders.erase(orders.begin());
