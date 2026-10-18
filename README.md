@@ -61,7 +61,7 @@ book.sellStopLoss(id, stopPrice, quantity);
 Where:
 - `id` is of `OrderID` type, which is an alias for `std::uint64_t`, and represents the order ID.
 - `price` is of `Price` type, which is an alias for `std::int64_t`, and represents the order price. All prices are stored as integer amounts of the smallest currency denomination (e.g. cents).
-- `quantity`is of `Quantity` type, which is an alias for `std::uint32_t`, and represents the order quantity and must be strictly positive.
+- `quantity` is of `Quantity` type, which is an alias for `std::uint32_t`, and represents the order quantity and must be strictly positive.
 - `peak` is of `Quantity` type and represents the iceberg peak.
 - `stopPrice` is of `Price` type and represents the stop loss price.
 These functions internally call `addOrder()`, whose functionality is outlined in the Implementation Design section below.
@@ -107,7 +107,7 @@ display order <id>
 help
 quit
 ```
-The user may use any of the first eight commands to submit an order. The quantities in between angled brackets are fields to be filled out by the user when placing an order. For example, `buy iceberg 1 100 50 10` placing an iceberg bid at $1.00, for 50 units with an iceberg peak of 10 units. Order commands in `txt` files can be quickly loaded using `load` followed by the path to the file. Information from the book is shown using the `display` commands. 
+The user may use any of the first eight commands to submit an order. The quantities in between angled brackets are fields to be filled out by the user when placing an order. For example, `buy iceberg 1 100 50 10` places an iceberg bid at $1.00, for 50 units with an iceberg peak of 10 units. Order commands in `txt` files can be quickly loaded using `load` followed by the path to the file. Information from the book is shown using the `display` commands. 
 
 To display the $N$ best asks and $N$ best bids, use `display book` followed by the number of bids/asks you would like to be displayed. The book is shown with the bid prices in green and ask prices in red, with a dynamically scaled bar representing the total volume at that price level. `display stops` works analogously for the stop loss books. The command `display trades` shows information regarding the last $N$ trades. We can also display information regarding a particular order by using `display order` followed by the order ID number.
 
@@ -173,7 +173,7 @@ Order 9000 cancelled.
 
 ![Book example](demo/display_book.png)
 
-![Stop loss book example](demo/display_stops.png).
+![Stop loss book example](demo/display_stops.png)
 
 
 ## Implementation Design
@@ -229,7 +229,7 @@ flowchart TD
     CO --> OL
 ```
 
-Each order is represented by the `Order` struct, which stores its ID, type, side (buy or sell), price, original quantity, and remaining quantity. The price is stored as an `std::optional<Price>` to accommodate market orders. Attributes specific to certain order types, such as the size of an iceberg peak of the price of a stop loss, are stored in `typeSpecificData`, an `std::variant`. For iceberg orders, the amount displayed in the order book is `quantityRemaining`, while `IcebergData::quantityTotalRemaining` stores the true remaining amount, including the displayed portion.  
+Each order is represented by the `Order` struct, which stores its ID, type, side (buy or sell), price, original quantity, and remaining quantity. The price is stored as an `std::optional<Price>` to accommodate market orders. Attributes specific to certain order types, such as the size of an iceberg peak or the price of a stop loss, are stored in `typeSpecificData`, an `std::variant`. For iceberg orders, the amount displayed in the order book is `quantityRemaining`, while `IcebergData::quantityTotalRemaining` stores the true remaining amount, including the displayed portion.  
 
 The unfulfilled bids and asks are implemented as separate `std::map` containers, mapping prices to `std::list<Order>`. This naturally incorporates price-time priority, but naively locating an order can take O(log(P) + N) time, where P is the number of price levels and N is the number of orders at that level. 
 
