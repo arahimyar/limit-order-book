@@ -11,7 +11,7 @@ class OrderBook{
     private:
     std::map<Price, std::list<Order>> bids;
     std::map<Price, std::list<Order>> asks;
-    std::unordered_map<OrderID, std::list<OrderLocation>::iterator> orderLookup;
+    std::unordered_map<OrderID, OrderLocation> orderLookup;
     void matchOrder(Order& order);
     std::vector<TradeInfo> tradeHistory;
     public:

@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <chrono>
+#include <list>
 
 using Price = std::int64_t;
 using OrderID = std::uint64_t;
@@ -37,4 +38,4 @@ struct TradeInfo {
     Price price;
     Quantity  quantity;
     Time time;
-}
+};

@@ -44,12 +44,6 @@ void OrderBook::cancelOrder(OrderID orderID){
 };
 
 void OrderBook::matchOrder(Order& order){
-    while (!book.empty() && order.quantity > 0 && order.price >=  start -> first){
-        auto& orders = start -> second;
-
-    }
-
-
     if (order.side == Side::BUY){
         while (!asks.empty() && order.quantity > 0 && order.price >= asks.begin() -> first){
             auto& orders = asks.begin() -> second;
