@@ -294,7 +294,7 @@ We run these benchmarks for $N = 10^2, 10^3, 10^4, 10^5, 10^6$ orders. For the s
 ### Single-Operation Benchmarks (Average Latency)
 
 | Operation | $N = 10^2$ | $N = 10^3$ | $N = 10^4$ | $N = 10^5$ | $N = 10^6$ |
-| :--- | :---: | :---: | :---: | :---: | :---: |
+| :---: | :---: | :---: | :---: | :---: | :---: |
 | Order Cancellation | 1284.0 ns | 1287.0 ns | 1253.0 ns | 1257.0 ns | 1207.0 ns |
 | Limit Order Insertion | 1257.0 ns | 1260.0 ns | 1274.0 ns | 1281.0 ns | 1249.0 ns |
 | Limit Order Match | 1483.0 ns | 1449.0 ns | 1434.0 ns | 1438.0 ns | 1403.0 ns |
