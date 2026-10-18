@@ -1,6 +1,6 @@
 # Limit Order Book
 
-A C++ limit order book with price-time priority matching and an interactive terminal interface. Includes support for limit, market, iceberg, and stop loss order types. Features O(1) cancellation (O(log P) for price-level manipulations), processing up to ~5.2M orders/s.
+A C++ limit order book with price-time priority matching and an interactive terminal interface. Includes support for limit, market, iceberg, and stop loss order types. Features O(1) cancellation (O(log P) for price-level manipulations), capable of processing ~5M orders/s.
 
 ## Background
 
@@ -23,7 +23,7 @@ For more information, see [Optiver: Orders and the Order Book](https://www.optiv
 
 1. Clone the repository
 ```bash
-git https://github.com/arahimyar/limit-order-book.git
+git clone https://github.com/arahimyar/limit-order-book.git
 ```
 2. Go to directory
 ```bash
