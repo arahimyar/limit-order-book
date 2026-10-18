@@ -3,7 +3,7 @@
 #include <vector>
 
 
-static void BM_StopLossMatching(benchmark::State& state){
+static void BM_StopLossMatching_all(benchmark::State& state){
     const int N = state.range(0);
     const int MOD = std::max(5, N/20);
     std::vector<int> buyStopPrices(MOD);
@@ -49,4 +49,4 @@ static void BM_StopLossMatching(benchmark::State& state){
     state.SetComplexityN(N);
 };
 
-BENCHMARK(BM_StopLossMatching)->RangeMultiplier(10)->Range(100, 1000000)->Complexity();
+BENCHMARK(BM_StopLossMatching_all)->RangeMultiplier(10)->Range(100, 1000000)->Complexity();

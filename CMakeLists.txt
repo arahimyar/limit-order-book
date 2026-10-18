@@ -38,26 +38,37 @@ add_executable(OrderBookTests
     )
 target_link_libraries(OrderBookTests PRIVATE OrderBookLib GTest::gtest_main)
 
-target_compile_options(OrderBookTests PRIVATE
-    -fsanitize=address,undefined
-    -fno-omit-frame-pointer)
+# target_compile_options(OrderBookTests PRIVATE
+#     -fsanitize=address,undefined
+#     -fno-omit-frame-pointer)
 
-target_link_options(OrderBookTests PRIVATE
-    -fsanitize=address,undefined)
+# target_link_options(OrderBookTests PRIVATE
+#     -fsanitize=address,undefined)
 
 include(GoogleTest)
 gtest_discover_tests(OrderBookTests)
 
 add_executable(OrderBookBenchmarks
-    benchmarks/benchmark_limitInsertion.cpp
-    benchmarks/benchmark_icebergInsertion.cpp
-    benchmarks/benchmark_stopLossInsertion.cpp
-    benchmarks/benchmark_cancellation.cpp
-    benchmarks/benchmark_limitMatching.cpp
-    benchmarks/benchmark_marketMatching.cpp
-    benchmarks/benchmark_icebergMatching.cpp
-    benchmarks/benchmark_stopLossMatching.cpp
     benchmarks/benchmark_realistic.cpp
+
+    benchmarks/single/benchmark_cancel_single.cpp
+    benchmarks/single/benchmark_limitInsertion_single.cpp
+    benchmarks/single/benchmark_icebergInsertion_single.cpp
+    benchmarks/single/benchmark_stopLossInsertion_single.cpp
+    benchmarks/single/benchmark_limitMatching_single.cpp
+    benchmarks/single/benchmark_marketMatching_single.cpp
+
+    benchmarks/single/benchmark_icebergMatching_single.cpp
+    benchmarks/single/benchmark_stopLossMatching_single.cpp
+
+    benchmarks/all/benchmark_limitInsertion_all.cpp
+    benchmarks/all/benchmark_icebergInsertion_all.cpp
+    benchmarks/all/benchmark_stopLossInsertion_all.cpp
+    benchmarks/all/benchmark_cancel_all.cpp
+    benchmarks/all/benchmark_limitMatching_all.cpp
+    benchmarks/all/benchmark_marketMatching_all.cpp
+    benchmarks/all/benchmark_icebergMatching_all.cpp
+    benchmarks/all/benchmark_stopLossMatching_all.cpp
 )
 
 target_link_libraries(OrderBookBenchmarks PRIVATE OrderBookLib benchmark::benchmark_main)

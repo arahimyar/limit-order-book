@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <random>
 
-static void BM_OrderCancellation(benchmark::State& state){
+static void BM_OrderCancelAll(benchmark::State& state){
     const int N = state.range(0);
     const int MOD = std::max(5, N/20);
     std::vector<int> buyPrices(MOD);
@@ -41,4 +41,4 @@ static void BM_OrderCancellation(benchmark::State& state){
 };
 
 
-BENCHMARK(BM_OrderCancellation)->RangeMultiplier(10)->Range(100, 1000000) -> Complexity();
+BENCHMARK(BM_OrderCancelAll)->RangeMultiplier(10)->Range(100, 1000000) -> Complexity();

@@ -2,7 +2,7 @@
 #include "OrderBook.h"
 #include <vector>
 
-static void BM_IcebergInsertion(benchmark::State& state){
+static void BM_MarketMatching_all(benchmark::State& state){
     const int N = state.range(0);
     const int MOD = std::max(5, N/20);
     std::vector<int> buyPrices(MOD);
@@ -15,13 +15,21 @@ static void BM_IcebergInsertion(benchmark::State& state){
     for (auto _ : state){
         state.PauseTiming();
         OrderBook book;
-        state.ResumeTiming();
         for (int i  = 0; i < N; i++){
             if (i % 2 == 0){
-                book.buyIceberg(i, buyPrices[i % MOD], 100, 10);
+                book.buyLimit(i, buyPrices[i % MOD], 100);
             }
             else{
-                book.sellIceberg(i, sellPrices[i % MOD], 100, 10);
+                book.sellLimit(i, sellPrices[i % MOD], 100);
+            }
+        }
+        state.ResumeTiming();
+        for (int i = 0; i < N; i++){
+            if (i%2 == 0){
+                book.sellMarket(N+i, 10);
+            }
+            else{
+                book.buyMarket(N+i, 10);
             }
         }
         benchmark::DoNotOptimize(book);
@@ -31,4 +39,4 @@ static void BM_IcebergInsertion(benchmark::State& state){
     state.SetComplexityN(N);
 };
 
-BENCHMARK(BM_IcebergInsertion)->RangeMultiplier(10)->Range(100, 1000000)->Complexity();
+BENCHMARK(BM_MarketMatching_all)->RangeMultiplier(10)->Range(100, 1000000) -> Complexity();

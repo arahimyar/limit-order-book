@@ -3,7 +3,7 @@
 #include <vector>
 
 
-static void BM_LimitMatching(benchmark::State& state){
+static void BM_IcebergMatching_all(benchmark::State& state){
     const int N = state.range(0);
     const int MOD = std::max(5, N/20);
     std::vector<int> buyPrices(MOD);
@@ -18,10 +18,10 @@ static void BM_LimitMatching(benchmark::State& state){
         OrderBook book;
         for (int i  = 0; i < N; i++){
             if (i % 2 == 0){
-                book.buyLimit(i, buyPrices[i % MOD], 100);
+                book.buyIceberg(i, buyPrices[i % MOD], 100, 10);
             }
             else{
-                book.sellLimit(i, sellPrices[i % MOD], 100);
+                book.sellIceberg(i, sellPrices[i % MOD], 100, 10);
             }
         }
         state.ResumeTiming();
@@ -40,4 +40,4 @@ static void BM_LimitMatching(benchmark::State& state){
     state.SetComplexityN(N);
 };
 
-BENCHMARK(BM_LimitMatching)->RangeMultiplier(10)->Range(100, 1000000)->Complexity();
+BENCHMARK(BM_IcebergMatching_all)->RangeMultiplier(10)->Range(100, 1000000)->Complexity();

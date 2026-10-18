@@ -1,6 +1,6 @@
 # Limit Order Book
 
-A C++ limit order book with price-time priority matching and an interactive terminal interface. Includes support for limit, market, iceberg, and stop loss order types. XXX Add speed here XXX
+A C++ limit order book with price-time priority matching and an interactive terminal interface. Includes support for limit, market, iceberg, and stop loss order types. Features O(1) cancellation (O(log P) for price-level manipulations), processing up to ~5.2M orders/s.
 
 ## Background
 
@@ -259,20 +259,28 @@ Performance is assessed using Google Benchmark. To run these tests:
 ```
 The source files of these tests can be found in the `benchmarks` directory.
 
-These benchmarks test the following:
-1. Inserting limit orders
-2. Inserting iceberg orders
-3. Inserting stop loss orders
-4. Cancelling orders
-5. Matching limit orders
-6. Matching market orders
-7. Matching iceberg orders
-8. Matching stop loss orders
-9. A realistic workflow
+These benchmarks are grouped into three categories:
+1. A realistic workflow generating $N$ orders with the following proportions: 40% Limit, 10% Market, 20% Iceberg, 20% Stop Loss, 10% Cancel. The order details (e.g. price, quantity...etc) are random. 
+2. Single operation tests - we perform a single operation (e.g. a single cancellation) for a book with N resting orders:
+    2a. Cancelling
+    2b. Limit insertion
+    2c. Limit match
+    2d. Market match
+    2e. Iceberg insertion
+    2f. Iceberg match
+    2g. Stop loss insertion
+    2h. Stop loss match
+3. Batch tests - we perform N operations of a single type (e.g. cancelling N orders in a book of size N, or inserting N orders into a book):
+    3a. Cancelling
+    3b. Limit insertion
+    3c. Limit matching
+    3d. Market matching
+    3e. Iceberg insertion
+    3f. Iceberg matching
+    3g. Stop loss insertion
+    3h. Stop loss matching
 
-The realistic workflow generates $N$ orders with the following distribution: 40% Limit, 10% Market, 20% Iceberg, 20% Stop Loss, 10% Cancel. The order and details (e.g. price, quantity...etc) are random. 
-
-We run these benchmarks for $N = 10^2, 10^3, 10^4, 10^5, 10^6$ orders. The results can be be found below:
+We run these benchmarks for $N = 10^2, 10^3, 10^4, 10^5, 10^6$ orders. For the single operation tests we observe an empirical complexity of O(1) across all tests:
 
 **Hardware:**
 - 2.6 GHz 6-Core Intel Core i7
@@ -282,6 +290,38 @@ We run these benchmarks for $N = 10^2, 10^3, 10^4, 10^5, 10^6$ orders. The resul
 - L2 Unified 256 KiB (x6)
 - L3 Unified 12288 KiB
 - Load Average: 2.41, 2.43, 2.35
+
+### Single-Operation Benchmarks (Average Latency)
+
+| Operation | $N = 10^2$ | $N = 10^3$ | $N = 10^4$ | $N = 10^5$ | $N = 10^6$ |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Order Cancellation** | 1284.0 ns | 1287.0 ns | 1253.0 ns | 1257.0 ns | 1207.0 ns |
+| **Limit Order Insertion** | 1257.0 ns | 1260.0 ns | 1274.0 ns | 1281.0 ns | 1249.0 ns |
+| **Limit Order Match** | 1483.0 ns | 1449.0 ns | 1434.0 ns | 1438.0 ns | 1403.0 ns |
+| **Market Order Match** | 1430.0 ns | 1427.0 ns | 1429.0 ns | 1434.0 ns | 1398.0 ns |
+| **Iceberg Order Insertion** | 1248.0 ns | 1358.0 ns | 1377.0 ns | 1397.0 ns | 1348.0 ns |
+| **Iceberg Order Match** | 106.0 ns | 97.2 ns | 95.1 ns | 96.1 ns | 99.5 ns |
+| **Stop-Loss Insertion** | 1225.0 ns | 1275.0 ns | 1299.0 ns | 1269.0 ns | 1334.0 ns |
+| **Stop Loss Level Match** | 5255.0 ns | 5263.0 ns | 5247.0 ns | 5269.0 ns | 5237.0 ns |
+
+*Note: Stop Loss Level Match matches a 20 order price level.*
+
+### Simulated Mixed/Realistic Workload
+
+| Book Depth ($N$) | Average Latency (per operation) | Throughput |
+| :---: | :---: | :---: |
+| **$10^2$** | 191.0 ns | 5.24M ops/sec |
+| **$10^3$** | 195.1 ns | 5.14M ops/sec |
+| **$10^4$** | 195.8 ns | 5.12M ops/sec |
+| **$10^5$** | 223.0 ns | 4.49M ops/sec |
+| **$10^6$** | 972.5 ns | 1.03M ops/sec |
+
+
+
+
+
+
+
 
 
 
