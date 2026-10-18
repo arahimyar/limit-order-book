@@ -1,6 +1,6 @@
 # Limit Order Book
 
-A C++ limit order book with price-time priority matching and an interactive terminal interface. Includes support for limit, market, iceberg, and stop loss order types. Features O(1) cancellation (O(log P) for price-level manipulations), capable of processing ~5M orders/s.
+A C++ limit order book with price-time priority matching and an interactive terminal interface. Includes support for limit, market, iceberg, and stop loss order types. Features O(1) cancellation (O(log P) for price-level manipulations), capable of processing ~5M ops/s.
 
 ## Background
 
