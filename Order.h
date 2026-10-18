@@ -33,6 +33,7 @@ struct OrderLocation{
 };
 
 struct TradeInfo {
+    OrderType type;
     OrderID buyOrderID;
     OrderID sellOrderID;
     Price price;
