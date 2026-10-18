@@ -4,6 +4,7 @@
 #include <map>
 #include <unordered_map>
 #include <list>
+#include <vector>
 
 
 class OrderBook{
@@ -12,7 +13,7 @@ class OrderBook{
     std::map<Price, std::list<Order>> asks;
     std::unordered_map<OrderID, std::list<OrderLocation>::iterator> orderLookup;
     void matchOrder(Order& order);
-    
+    std::vector<TradeInfo> tradeHistory;
     public:
         void addOrder(Order& order);
         void cancelOrder(OrderID orderID);

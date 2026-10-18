@@ -1,5 +1,8 @@
 #include "OrderBook.h"
 #include <cstdint>
+#include <algorithm>
+#include <iterator>
+#include <chrono>
 
 void OrderBook::addOrder(Order& order){
     if (order.side == Side::BUY) {
@@ -41,12 +44,81 @@ void OrderBook::cancelOrder(OrderID orderID){
 };
 
 void OrderBook::matchOrder(Order& order){
-    if (order.side == Side::BUY){
+    while (!book.empty() && order.quantity > 0 && order.price >=  start -> first){
+        auto& orders = start -> second;
 
+    }
+
+
+    if (order.side == Side::BUY){
+        while (!asks.empty() && order.quantity > 0 && order.price >= asks.begin() -> first){
+            auto& orders = asks.begin() -> second;
+            Order& firstOrder = orders.front();
+            if (firstOrder.quantity <= order.quantity){
+                order.quantity -= firstOrder.quantity;
+                TradeInfo trade {
+                        order.id,
+                        firstOrder.id,
+                        firstOrder.price,
+                        firstOrder.quantity,
+                        std::chrono::system_clock::now()
+                    };
+                tradeHistory.push_back(trade);
+                orderLookup.erase(firstOrder.id);
+                orders.erase(orders.begin());
+                if (orders.empty()){
+                    asks.erase(asks.begin());
+                }
+
+            }
+            else if (firstOrder.quantity > order.quantity){
+                firstOrder.quantity -= order.quantity;
+                TradeInfo trade {
+                        order.id,
+                        firstOrder.id,
+                        firstOrder.price,
+                        order.quantity,
+                        std::chrono::system_clock::now()
+                    };
+                tradeHistory.push_back(trade);
+                return;
+            }    
+        }
 
     }
     else if (order.side == Side::SELL){
-        
+        while (!bids.empty() && order.quantity > 0 && order.price <= bids.rbegin() -> first){
+            auto& orders = bids.rbegin() -> second;
+            Order& firstOrder = orders.front();
+            if (firstOrder.quantity <= order.quantity){
+                order.quantity -= firstOrder.quantity;
+                TradeInfo trade {
+                        firstOrder.id,
+                        order.id,
+                        firstOrder.price,
+                        firstOrder.quantity,
+                        std::chrono::system_clock::now()
+                    };
+                tradeHistory.push_back(trade);
+                orderLookup.erase(firstOrder.id);
+                orders.erase(orders.begin());
+                if (orders.empty()){
+                    bids.erase(std::prev(bids.end()));
+                }
+            }
+            else if (firstOrder.quantity > order.quantity){
+                firstOrder.quantity -= order.quantity;
+                TradeInfo trade {
+                        firstOrder.id,
+                        order.id,
+                        firstOrder.price,
+                        order.quantity,
+                        std::chrono::system_clock::now()
+                    };
+                tradeHistory.push_back(trade);
+                return;
+            }    
+        }
     }
 
 };
