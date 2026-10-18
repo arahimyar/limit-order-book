@@ -23,11 +23,11 @@ For more information, see [Optiver: Orders and the Order Book](https://www.optiv
 
 1. Clone the repository
 ```bash
-ADD LINK
+git https://github.com/arahimyar/limit-order-book.git
 ```
 2. Go to directory
 ```bash
-cd OrderBook
+cd limit-order-book
 ```
 3. Configure build files
 ```bash
