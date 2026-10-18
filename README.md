@@ -295,14 +295,14 @@ We run these benchmarks for $N = 10^2, 10^3, 10^4, 10^5, 10^6$ orders. For the s
 
 | Operation | $N = 10^2$ | $N = 10^3$ | $N = 10^4$ | $N = 10^5$ | $N = 10^6$ |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Order Cancellation** | 1284.0 ns | 1287.0 ns | 1253.0 ns | 1257.0 ns | 1207.0 ns |
-| **Limit Order Insertion** | 1257.0 ns | 1260.0 ns | 1274.0 ns | 1281.0 ns | 1249.0 ns |
-| **Limit Order Match** | 1483.0 ns | 1449.0 ns | 1434.0 ns | 1438.0 ns | 1403.0 ns |
-| **Market Order Match** | 1430.0 ns | 1427.0 ns | 1429.0 ns | 1434.0 ns | 1398.0 ns |
-| **Iceberg Order Insertion** | 1248.0 ns | 1358.0 ns | 1377.0 ns | 1397.0 ns | 1348.0 ns |
-| **Iceberg Order Match** | 106.0 ns | 97.2 ns | 95.1 ns | 96.1 ns | 99.5 ns |
-| **Stop-Loss Insertion** | 1225.0 ns | 1275.0 ns | 1299.0 ns | 1269.0 ns | 1334.0 ns |
-| **Stop Loss Level Match** | 5255.0 ns | 5263.0 ns | 5247.0 ns | 5269.0 ns | 5237.0 ns |
+| Order Cancellation | 1284.0 ns | 1287.0 ns | 1253.0 ns | 1257.0 ns | 1207.0 ns |
+| Limit Order Insertion | 1257.0 ns | 1260.0 ns | 1274.0 ns | 1281.0 ns | 1249.0 ns |
+| Limit Order Match | 1483.0 ns | 1449.0 ns | 1434.0 ns | 1438.0 ns | 1403.0 ns |
+| Market Order Match | 1430.0 ns | 1427.0 ns | 1429.0 ns | 1434.0 ns | 1398.0 ns |
+| Iceberg Order Insertion | 1248.0 ns | 1358.0 ns | 1377.0 ns | 1397.0 ns | 1348.0 ns |
+| Iceberg Order Match | 106.0 ns | 97.2 ns | 95.1 ns | 96.1 ns | 99.5 ns |
+| Stop-Loss Insertion | 1225.0 ns | 1275.0 ns | 1299.0 ns | 1269.0 ns | 1334.0 ns |
+| Stop Loss Level Match | 5255.0 ns | 5263.0 ns | 5247.0 ns | 5269.0 ns | 5237.0 ns |
 
 *Note: Stop Loss Level Match matches a 20 order price level.*
 
