@@ -1,3 +1,7 @@
 build/
 results.json
 .DS_Store
+src/.DS_Store 
+tests/.DS_Store
+benchmarks/.DS_Store
+benchmarks/all/.DS_Store
